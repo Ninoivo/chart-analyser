@@ -255,24 +255,24 @@
                 setLoading(true);
                 
                 try {
-                    // Use CORS proxy for browser compatibility
-                    const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
-                    const apiUrl = 'https://api.anthropic.com/v1/messages';
+                    // Call Netlify Function instead of direct API
+                    const endpoint = window.location.hostname === 'localhost' 
+                        ? 'http://localhost:8888/.netlify/functions/anthropic'
+                        : '/.netlify/functions/anthropic';
                     
-                    const response = await fetch(proxyUrl + apiUrl, {
+                    const response = await fetch(endpoint, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'x-api-key': apiKey,
-                            'anthropic-version': '2023-06-01',
-                            'X-Requested-With': 'XMLHttpRequest'
                         },
                         body: JSON.stringify({
-                            model: 'claude-sonnet-4-20250514',
-                            max_tokens: 2000,
-                            messages: [{
-                                role: 'user',
-                                content: `You are an expert technical analyst. Provide a comprehensive trading analysis for ${symbol} based on current market conditions.
+                            apiKey: apiKey,
+                            body: {
+                                model: 'claude-sonnet-4-20250514',
+                                max_tokens: 2000,
+                                messages: [{
+                                    role: 'user',
+                                    content: `You are an expert technical analyst. Provide a comprehensive trading analysis for ${symbol} based on current market conditions.
 
 Respond ONLY with valid JSON (no markdown, no backticks, no extra text):
 {
@@ -300,7 +300,8 @@ Respond ONLY with valid JSON (no markdown, no backticks, no extra text):
     "patternCompletion": "Head and Shoulders pattern forming"
   }
 }`
-                            }]
+                                }]
+                            }
                         })
                     });
 
@@ -324,16 +325,26 @@ Respond ONLY with valid JSON (no markdown, no backticks, no extra text):
                         .map(block => block.text)
                         .join('');
                     
-                    // Remove markdown code blocks if present
-                    const cleanText = analysisText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+                    // More robust JSON extraction
+                    let cleanText = analysisText.trim();
+                    
+                    // Remove markdown code blocks
+                    cleanText = cleanText.replace(/```json\n?/gi, '').replace(/```\n?/g, '');
+                    
+                    // Try to extract JSON from text if there's extra content
+                    const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) {
+                        cleanText = jsonMatch[0];
+                    }
                     
                     let parsedAnalysis;
                     try {
                         parsedAnalysis = JSON.parse(cleanText);
                     } catch (parseError) {
                         console.error('JSON Parse Error:', parseError);
-                        console.error('Received text:', cleanText);
-                        throw new Error('Failed to parse analysis response');
+                        console.error('Received text:', analysisText);
+                        console.error('Cleaned text:', cleanText);
+                        throw new Error('AI response format error. Please try again.');
                     }
                     
                     setAnalysis(parsedAnalysis);
@@ -439,37 +450,37 @@ Respond ONLY with valid JSON (no markdown, no backticks, no extra text):
                 setLoading(true);
                 
                 try {
-                    // Use CORS proxy for browser compatibility
-                    const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
-                    const apiUrl = 'https://api.anthropic.com/v1/messages';
+                    // Call Netlify Function instead of direct API
+                    const endpoint = window.location.hostname === 'localhost' 
+                        ? 'http://localhost:8888/.netlify/functions/anthropic'
+                        : '/.netlify/functions/anthropic';
                     
                     const base64Image = image.split(',')[1];
                     
-                    const response = await fetch(proxyUrl + apiUrl, {
+                    const response = await fetch(endpoint, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'x-api-key': apiKey,
-                            'anthropic-version': '2023-06-01',
-                            'X-Requested-With': 'XMLHttpRequest'
                         },
                         body: JSON.stringify({
-                            model: 'claude-sonnet-4-20250514',
-                            max_tokens: 2000,
-                            messages: [{
-                                role: 'user',
-                                content: [
-                                    {
-                                        type: 'image',
-                                        source: {
-                                            type: 'base64',
-                                            media_type: 'image/jpeg',
-                                            data: base64Image
-                                        }
-                                    },
-                                    {
-                                        type: 'text',
-                                        text: `Analyze this trading chart image as an expert technical analyst. Consider:
+                            apiKey: apiKey,
+                            body: {
+                                model: 'claude-sonnet-4-20250514',
+                                max_tokens: 2000,
+                                messages: [{
+                                    role: 'user',
+                                    content: [
+                                        {
+                                            type: 'image',
+                                            source: {
+                                                type: 'base64',
+                                                media_type: 'image/jpeg',
+                                                data: base64Image
+                                            }
+                                        },
+                                        {
+                                            type: 'text',
+                                            text: `Analyze this trading chart image as an expert technical analyst. Consider:
 
 Market Context:
 - Symbol: ${marketData.symbol}
@@ -503,9 +514,10 @@ Respond ONLY with valid JSON (no markdown, no backticks):
     "patternCompletion": "pattern"
   }
 }`
-                                    }
-                                ]
-                            }]
+                                        }
+                                    ]
+                                }]
+                            }
                         })
                     });
 
@@ -529,15 +541,26 @@ Respond ONLY with valid JSON (no markdown, no backticks):
                         .map(block => block.text)
                         .join('');
                     
-                    const cleanText = analysisText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+                    // More robust JSON extraction
+                    let cleanText = analysisText.trim();
+                    
+                    // Remove markdown code blocks
+                    cleanText = cleanText.replace(/```json\n?/gi, '').replace(/```\n?/g, '');
+                    
+                    // Try to extract JSON from text if there's extra content
+                    const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) {
+                        cleanText = jsonMatch[0];
+                    }
                     
                     let parsedAnalysis;
                     try {
                         parsedAnalysis = JSON.parse(cleanText);
                     } catch (parseError) {
                         console.error('JSON Parse Error:', parseError);
-                        console.error('Received text:', cleanText);
-                        throw new Error('Failed to parse analysis response');
+                        console.error('Received text:', analysisText);
+                        console.error('Cleaned text:', cleanText);
+                        throw new Error('AI response format error. Please try again.');
                     }
                     
                     setAnalysis(parsedAnalysis);
