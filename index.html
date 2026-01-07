@@ -457,6 +457,16 @@ Respond ONLY with valid JSON (no markdown, no backticks, no extra text):
                     
                     const base64Image = image.split(',')[1];
                     
+                    // Detect image type from data URL
+                    let mediaType = 'image/jpeg';
+                    if (image.startsWith('data:image/png')) {
+                        mediaType = 'image/png';
+                    } else if (image.startsWith('data:image/webp')) {
+                        mediaType = 'image/webp';
+                    } else if (image.startsWith('data:image/gif')) {
+                        mediaType = 'image/gif';
+                    }
+                    
                     const response = await fetch(endpoint, {
                         method: 'POST',
                         headers: {
@@ -474,7 +484,7 @@ Respond ONLY with valid JSON (no markdown, no backticks, no extra text):
                                             type: 'image',
                                             source: {
                                                 type: 'base64',
-                                                media_type: 'image/jpeg',
+                                                media_type: mediaType,
                                                 data: base64Image
                                             }
                                         },
