@@ -1,586 +1,313 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Institutional AI Trading System</title>
+    <title>AI Trading System</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-        }
-    </style>
 </head>
 <body>
     <div id="root"></div>
-
     <script type="text/babel">
         const { useState, useRef, useEffect } = React;
 
-        // Icon Components
-        const TrendingUp = () => (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-                <polyline points="17 6 23 6 23 12"></polyline>
-            </svg>
-        );
-
-        const TrendingDown = () => (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
-                <polyline points="17 18 23 18 23 12"></polyline>
-            </svg>
-        );
-
-        const Activity = () => (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-            </svg>
-        );
-
-        const Mic = () => (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                <line x1="12" y1="19" x2="12" y2="22"></line>
-            </svg>
-        );
-
-        const MicOff = () => (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="2" y1="2" x2="22" y2="22"></line>
-                <path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2"></path>
-                <path d="M5 10v2a7 7 0 0 0 12 5"></path>
-                <path d="M15 9.34V5a3 3 0 0 0-5.68-1.33"></path>
-                <path d="M9 9v3a3 3 0 0 0 5.12 2.12"></path>
-                <line x1="12" y1="19" x2="12" y2="22"></line>
-            </svg>
-        );
-
-        const Bell = () => (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-            </svg>
-        );
-
-        const BellOff = () => (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                <path d="M18.63 13A17.89 17.89 0 0 1 18 8"></path>
-                <path d="M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14"></path>
-                <path d="M18 8a6 6 0 0 0-9.33-5"></path>
-                <line x1="2" y1="2" x2="22" y2="22"></line>
-            </svg>
-        );
-
-        const DollarSign = () => (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="1" x2="12" y2="23"></line>
-                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-            </svg>
-        );
-
-        const BarChart3 = () => (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 3v18h18"></path>
-                <path d="M18 17V9"></path>
-                <path d="M13 17V5"></path>
-                <path d="M8 17v-3"></path>
-            </svg>
-        );
-
-        const Target = () => (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <circle cx="12" cy="12" r="6"></circle>
-                <circle cx="12" cy="12" r="2"></circle>
-            </svg>
-        );
-
-        const Shield = () => (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-            </svg>
-        );
-
-        const InstitutionalTrader = () => {
+        const App = () => {
+            const [marketData, setMarketData] = useState(null);
             const [analysis, setAnalysis] = useState(null);
             const [loading, setLoading] = useState(false);
-            const [marketData, setMarketData] = useState(null);
-            const [isListening, setIsListening] = useState(false);
-            const [voiceTranscript, setVoiceTranscript] = useState('');
-            const [alertsEnabled, setAlertsEnabled] = useState(true);
-            const [selectedBroker, setSelectedBroker] = useState('demo');
-            const [connectedBroker, setConnectedBroker] = useState(null);
-            const [tradeSize, setTradeSize] = useState(1);
-            const [riskPercent, setRiskPercent] = useState(1);
             const [symbol, setSymbol] = useState('BTCUSD');
-            const [timeframe, setTimeframe] = useState('1D');
-            const [apiKeys, setApiKeys] = useState({
-                alphavantage: localStorage.getItem('alphavantage_key') || ''
-            });
-            const [showApiSettings, setShowApiSettings] = useState(false);
+            const [timeframe, setTimeframe] = useState('1H');
+            const [isListening, setIsListening] = useState(false);
+            const [voiceText, setVoiceText] = useState('');
+            const [apiKey, setApiKey] = useState(localStorage.getItem('alphavantage_key') || '');
+            const [showSettings, setShowSettings] = useState(false);
             const recognitionRef = useRef(null);
 
             useEffect(() => {
-                if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                    recognitionRef.current = new SpeechRecognition();
-                    recognitionRef.current.continuous = false;
-                    recognitionRef.current.interimResults = false;
-
-                    recognitionRef.current.onresult = (event) => {
-                        const transcript = event.results[0][0].transcript;
-                        setVoiceTranscript(transcript);
-                        processVoiceCommand(transcript);
+                if ('webkitSpeechRecognition' in window) {
+                    const recognition = new webkitSpeechRecognition();
+                    recognition.continuous = false;
+                    recognition.onresult = (e) => {
+                        const text = e.results[0][0].transcript;
+                        setVoiceText(text);
+                        processVoice(text);
                     };
-
-                    recognitionRef.current.onend = () => {
-                        setIsListening(false);
-                    };
+                    recognition.onend = () => setIsListening(false);
+                    recognitionRef.current = recognition;
                 }
             }, []);
 
             const speak = (text) => {
                 if ('speechSynthesis' in window) {
                     const utterance = new SpeechSynthesisUtterance(text);
-                    window.speechSynthesis.speak(utterance);
+                    speechSynthesis.speak(utterance);
                 }
             };
 
-            const toggleVoiceRecognition = () => {
-                if (!recognitionRef.current) {
-                    alert('Speech recognition not supported. Use Chrome or Edge.');
-                    return;
-                }
-
-                if (isListening) {
-                    recognitionRef.current.stop();
-                    setIsListening(false);
-                } else {
-                    setVoiceTranscript('');
-                    recognitionRef.current.start();
-                    setIsListening(true);
-                    speak('Listening for trading command');
-                }
+            const processVoice = (text) => {
+                const lower = text.toLowerCase();
+                let sym = 'BTCUSD';
+                if (lower.includes('bitcoin') || lower.includes('btc')) sym = 'BTCUSD';
+                else if (lower.includes('ethereum') || lower.includes('eth')) sym = 'ETHUSD';
+                else if (lower.includes('euro')) sym = 'EURUSD';
+                else if (lower.includes('gold')) sym = 'XAUUSD';
+                setSymbol(sym);
+                fetchData(sym);
             };
 
-            const processVoiceCommand = (transcript) => {
-                const lower = transcript.toLowerCase();
-                let newSymbol = symbol;
-                
-                if (lower.includes('bitcoin') || lower.includes('btc')) newSymbol = 'BTCUSD';
-                else if (lower.includes('ethereum') || lower.includes('eth')) newSymbol = 'ETHUSD';
-                else if (lower.includes('euro')) newSymbol = 'EURUSD';
-                else if (lower.includes('gold')) newSymbol = 'XAUUSD';
-                else if (lower.includes('gbp') || lower.includes('pound')) newSymbol = 'GBPUSD';
-                
-                setSymbol(newSymbol);
-                speak(`Analyzing ${newSymbol}`);
-                fetchRealTimeData(newSymbol);
-            };
-
-            const fetchRealTimeData = async (sym) => {
+            const fetchData = async (sym) => {
                 setLoading(true);
-                
                 try {
-                    const endpoint = window.location.hostname === 'localhost' 
-                        ? 'http://localhost:8888/.netlify/functions/market-data'
-                        : '/.netlify/functions/market-data';
-                    
-                    const response = await fetch(endpoint, {
+                    const endpoint = '/.netlify/functions/market-data';
+                    const res = await fetch(endpoint, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            symbol: sym,
-                            timeframe: timeframe,
-                            apiKeys: apiKeys
-                        })
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({symbol: sym, timeframe, apiKeys: {alphavantage: apiKey}})
                     });
-
-                    if (!response.ok) {
-                        throw new Error(`API error: ${response.status}`);
-                    }
-
-                    const data = await response.json();
-                    
-                    if (data.error) {
-                        throw new Error(data.error);
-                    }
-                    
+                    const data = await res.json();
                     setMarketData(data);
-                    analyzeMarket(data);
-                    
-                    speak(`Market data loaded for ${sym}. Current price ${data.price.toLocaleString()}`);
-                    
-                } catch (error) {
-                    console.error('Data fetch error:', error);
-                    speak('Failed to fetch market data. Using demo mode.');
-                    
-                    const demoData = getDemoMarketData(sym);
-                    setMarketData(demoData);
-                    analyzeMarket(demoData);
+                    analyzeData(data);
+                    speak(`Data loaded for ${sym}`);
+                } catch (err) {
+                    console.error(err);
+                    speak('Failed to fetch data');
                 } finally {
                     setLoading(false);
                 }
             };
 
-            const getDemoMarketData = (sym) => {
-                const basePrice = sym.includes('BTC') ? 43250 : 
-                                 sym.includes('ETH') ? 2280 :
-                                 sym.includes('XAU') ? 2042 :
-                                 sym.includes('EUR') ? 1.0856 : 1.2734;
-                
-                return {
-                    symbol: sym,
-                    source: 'Demo Mode',
-                    price: basePrice,
-                    change: basePrice * 0.012,
-                    changePercent: 1.2,
-                    volume: 1250000000,
-                    bid: basePrice - 0.5,
-                    ask: basePrice + 0.5,
-                    high24h: basePrice * 1.015,
-                    low24h: basePrice * 0.985,
-                    indicators: {
-                        rsi: 55 + Math.random() * 20,
-                        macd: { value: 125.5, signal: 118.2, histogram: 7.3 },
-                        ema20: basePrice * 0.995,
-                        ema50: basePrice * 0.985,
-                        ema200: basePrice * 0.95,
-                        sma20: basePrice * 0.996,
-                        sma50: basePrice * 0.987,
-                        bollingerBands: {
-                            upper: basePrice * 1.02,
-                            middle: basePrice,
-                            lower: basePrice * 0.98
-                        },
-                        atr: basePrice * 0.02,
-                        adx: 28.5,
-                        stochastic: { k: 65, d: 58 }
-                    },
-                    patterns: ['Uptrend', 'Bullish Flag'],
-                    supportResistance: {
-                        support: [basePrice * 0.97, basePrice * 0.94, basePrice * 0.91],
-                        resistance: [basePrice * 1.03, basePrice * 1.06, basePrice * 1.09]
-                    },
-                    note: 'Demo data - Add API keys for real-time data'
-                };
-            };
-
-            const analyzeMarket = (data) => {
+            const analyzeData = (data) => {
+                if (!data.indicators) return;
                 const rsi = data.indicators.rsi;
-                const macd = data.indicators.macd;
                 const price = data.price;
-                const ema20 = data.indicators.ema20;
-                const ema50 = data.indicators.ema50;
+                let dir = 'NEUTRAL', conf = 50, rec = 'HOLD';
                 
-                let direction = 'NEUTRAL';
-                let confidence = 50;
-                let recommendation = 'HOLD';
+                if (rsi < 30) { dir = 'BULLISH'; rec = 'BUY'; conf = 75; }
+                else if (rsi > 70) { dir = 'BEARISH'; rec = 'SELL'; conf = 75; }
                 
-                if (rsi < 30 && price > ema20 && macd.histogram > 0) {
-                    direction = 'BULLISH';
-                    recommendation = 'BUY';
-                    confidence = 75;
-                } else if (rsi > 70 && price < ema20 && macd.histogram < 0) {
-                    direction = 'BEARISH';
-                    recommendation = 'SELL';
-                    confidence = 75;
-                } else if (price > ema50 && macd.value > macd.signal) {
-                    direction = 'BULLISH';
-                    recommendation = 'BUY';
-                    confidence = 65;
-                }
-                
-                const analysis = {
-                    direction,
-                    confidence,
-                    recommendation,
+                setAnalysis({
+                    direction: dir,
+                    confidence: conf,
+                    recommendation: rec,
                     entryPoint: price.toFixed(2),
                     stopLoss: (price * 0.98).toFixed(2),
                     takeProfit: (price * 1.05).toFixed(2),
-                    riskReward: '1:2.5',
-                    reasoning: `RSI at ${rsi.toFixed(1)}, MACD ${macd.histogram > 0 ? 'bullish' : 'bearish'} crossover, price ${price > ema50 ? 'above' : 'below'} key moving averages`,
-                    patterns: data.patterns,
-                    keyLevels: data.supportResistance
-                };
-                
-                setAnalysis(analysis);
-                
-                const speech = `Analysis complete. Market is ${direction}. Recommendation: ${recommendation} with ${confidence}% confidence`;
-                speak(speech);
-            };
-
-            const connectBroker = async (broker) => {
-                setLoading(true);
-                speak(`Connecting to ${broker}`);
-                
-                setTimeout(() => {
-                    setConnectedBroker({
-                        name: broker,
-                        balance: 50000,
-                        equity: 50250,
-                        margin: 5000,
-                        freeMargin: 45250
-                    });
-                    setLoading(false);
-                    speak(`Connected to ${broker} successfully`);
-                }, 2000);
-            };
-
-            const executeTrade = async () => {
-                if (!connectedBroker) {
-                    alert('Please connect to a broker first');
-                    return;
-                }
-                
-                if (!analysis) {
-                    alert('Please analyze the market first');
-                    return;
-                }
-
-                const trade = {
-                    symbol,
-                    action: analysis.recommendation,
-                    size: tradeSize,
-                    entryPrice: parseFloat(analysis.entryPoint),
-                    stopLoss: parseFloat(analysis.stopLoss),
-                    takeProfit: parseFloat(analysis.takeProfit)
-                };
-
-                speak(`Executing ${trade.action} order for ${trade.size} lots of ${symbol}`);
-                
-                alert(`✅ Trade Executed!\n\n${trade.action} ${trade.size} lots ${symbol}\nEntry: ${trade.entryPrice}\nSL: ${trade.stopLoss}\nTP: ${trade.takeProfit}`);
+                    reasoning: `RSI: ${rsi.toFixed(1)}`,
+                    patterns: data.patterns || [],
+                    keyLevels: data.supportResistance || {support: [], resistance: []}
+                });
             };
 
             return (
-                <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-900 p-4">
-                    <div className="max-w-7xl mx-auto">
-                        <div className="text-center mb-6">
-                            <h1 className="text-4xl font-bold text-white mb-2 flex items-center justify-center gap-3">
-                                <Activity />
-                                Institutional AI Trading System
-                            </h1>
-                            <p className="text-blue-200">Real-time data • Advanced AI • Live broker execution</p>
-                        </div>
-
-                        <div className="mb-6 bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20">
-                            <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4">
+                    <div className="max-w-6xl mx-auto">
+                        <h1 className="text-3xl font-bold text-white text-center mb-6">AI Trading System</h1>
+                        
+                        <div className="mb-4 bg-white/10 rounded-xl p-4 border border-white/20">
+                            <div className="flex gap-4 flex-wrap">
                                 <button
-                                    onClick={toggleVoiceRecognition}
-                                    className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold ${
-                                        isListening ? 'bg-red-600 animate-pulse' : 'bg-purple-600 hover:bg-purple-700'
-                                    } text-white`}
+                                    onClick={() => {
+                                        if (isListening) {
+                                            recognitionRef.current?.stop();
+                                        } else {
+                                            recognitionRef.current?.start();
+                                            setIsListening(true);
+                                        }
+                                    }}
+                                    className={`px-6 py-2 rounded-lg font-semibold ${isListening ? 'bg-red-600 animate-pulse' : 'bg-purple-600'} text-white`}
                                 >
-                                    {isListening ? <MicOff /> : <Mic />}
-                                    {isListening ? 'Listening...' : 'Voice Command'}
+                                    {isListening ? '🎤 Listening...' : '🎤 Voice'}
                                 </button>
-
-                                {voiceTranscript && (
-                                    <div className="text-white bg-white/10 px-4 py-2 rounded-lg">
-                                        <span className="text-blue-200 text-sm">Command: </span>
-                                        <span className="font-semibold">"{voiceTranscript}"</span>
+                                
+                                <button onClick={() => setShowSettings(!showSettings)} className="px-4 py-2 bg-indigo-600 text-white rounded-lg">
+                                    ⚙️ Settings
+                                </button>
+                                
+                                {voiceText && (
+                                    <div className="text-white bg-white/10 px-4 py-2 rounded-lg text-sm">
+                                        "{voiceText}"
                                     </div>
                                 )}
-
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={() => setShowApiSettings(!showApiSettings)}
-                                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm"
-                                    >
-                                        ⚙️ API Keys
-                                    </button>
-                                    
-                                    <button
-                                        onClick={() => setAlertsEnabled(!alertsEnabled)}
-                                        className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
-                                            alertsEnabled ? 'bg-green-600' : 'bg-gray-600'
-                                        } text-white`}
-                                    >
-                                        {alertsEnabled ? <Bell /> : <BellOff />}
-                                        Alerts {alertsEnabled ? 'ON' : 'OFF'}
-                                    </button>
-                                </div>
                             </div>
-
-                            {showApiSettings && (
-                                <div className="mt-4 p-4 bg-white/5 rounded-lg border border-white/10">
-                                    <h4 className="text-white font-semibold mb-3">API Configuration</h4>
-                                    <div className="space-y-3">
-                                        <div>
-                                            <label className="block text-sm text-blue-200 mb-1">
-                                                Alpha Vantage API Key (for Forex/Stocks)
-                                                <a href="https://www.alphavantage.co/support/#api-key" target="_blank" className="text-blue-400 ml-2 text-xs underline">Get Free Key</a>
-                                            </label>
-                                            <input
-                                                type="password"
-                                                value={apiKeys.alphavantage}
-                                                onChange={(e) => {
-                                                    const newKeys = {...apiKeys, alphavantage: e.target.value};
-                                                    setApiKeys(newKeys);
-                                                    localStorage.setItem('alphavantage_key', e.target.value);
-                                                }}
-                                                placeholder="Enter Alpha Vantage API key..."
-                                                className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded text-white text-sm"
-                                            />
-                                        </div>
-                                        <p className="text-xs text-blue-300">
-                                            ℹ️ Crypto works without API keys (uses Binance). Forex/Stocks require Alpha Vantage key.
-                                        </p>
-                                    </div>
+                            
+                            {showSettings && (
+                                <div className="mt-4 p-3 bg-white/5 rounded-lg">
+                                    <label className="block text-sm text-blue-200 mb-2">Alpha Vantage API Key</label>
+                                    <input
+                                        type="password"
+                                        value={apiKey}
+                                        onChange={(e) => {
+                                            setApiKey(e.target.value);
+                                            localStorage.setItem('alphavantage_key', e.target.value);
+                                        }}
+                                        className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded text-white text-sm"
+                                        placeholder="Enter API key..."
+                                    />
+                                    <p className="text-xs text-blue-300 mt-2">Crypto works without key. Get free key at alphavantage.co</p>
                                 </div>
                             )}
                         </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            <div className="lg:col-span-1 space-y-6">
-                                <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-                                    <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                                        <BarChart3 />
-                                        Market Selection
-                                    </h3>
-                                    
-                                    <div className="space-y-4">
-                                        <div>
-                                            <label className="block text-sm text-blue-200 mb-2">Symbol</label>
-                                            <input
-                                                type="text"
-                                                value={symbol}
-                                                onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-                                                className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-white"
-                                                placeholder="BTCUSD"
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm text-blue-200 mb-2">Timeframe</label>
-                                            <select
-                                                value={timeframe}
-                                                onChange={(e) => setTimeframe(e.target.value)}
-                                                className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-white"
-                                            >
-                                                <option value="1M">1 Minute</option>
-                                                <option value="5M">5 Minutes</option>
-                                                <option value="15M">15 Minutes</option>
-                                                <option value="1H">1 Hour</option>
-                                                <option value="4H">4 Hours</option>
-                                                <option value="1D">1 Day</option>
-                                                <option value="1W">1 Week</option>
-                                            </select>
-                                        </div>
-
-                                        <button
-                                            onClick={() => fetchRealTimeData(symbol)}
-                                            disabled={loading}
-                                            className="w-full py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 disabled:from-gray-600 disabled:to-gray-700 text-white rounded-lg font-semibold"
-                                        >
-                                            {loading ? 'Loading...' : 'Analyze Market'}
-                                        </button>
-                                    </div>
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                            <div className="bg-white/10 rounded-xl p-4 border border-white/20">
+                                <h3 className="text-lg font-semibold text-white mb-3">Market</h3>
+                                <div className="space-y-3">
+                                    <input
+                                        type="text"
+                                        value={symbol}
+                                        onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+                                        className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded text-white"
+                                        placeholder="BTCUSD"
+                                    />
+                                    <select
+                                        value={timeframe}
+                                        onChange={(e) => setTimeframe(e.target.value)}
+                                        className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded text-white"
+                                    >
+                                        <option value="1M">1 Minute</option>
+                                        <option value="5M">5 Minutes</option>
+                                        <option value="15M">15 Minutes</option>
+                                        <option value="1H">1 Hour</option>
+                                        <option value="4H">4 Hours</option>
+                                        <option value="1D">1 Day</option>
+                                    </select>
+                                    <button
+                                        onClick={() => fetchData(symbol)}
+                                        disabled={loading}
+                                        className="w-full py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-lg font-semibold"
+                                    >
+                                        {loading ? 'Loading...' : 'Analyze'}
+                                    </button>
                                 </div>
+                            </div>
 
-                                <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-                                    <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                                        <DollarSign />
-                                        Broker Connection
-                                    </h3>
+                            <div className="lg:col-span-2 space-y-4">
+                                {marketData && (
+                                    <div className="bg-white/10 rounded-xl p-4 border border-white/20">
+                                        <div className="flex justify-between items-center mb-3">
+                                            <h3 className="text-lg font-semibold text-white">{marketData.symbol}</h3>
+                                            <span className="text-xs bg-blue-600/30 px-2 py-1 rounded text-blue-200">{marketData.source}</span>
+                                        </div>
+                                        
+                                        {marketData.note && (
+                                            <div className="mb-3 p-2 bg-yellow-600/20 border border-yellow-400 rounded text-yellow-200 text-xs">
+                                                {marketData.note}
+                                            </div>
+                                        )}
+                                        
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                                            <div className="bg-white/5 p-2 rounded">
+                                                <div className="text-blue-200 text-xs">Price</div>
+                                                <div className="text-white font-bold">${marketData.price?.toLocaleString()}</div>
+                                            </div>
+                                            <div className="bg-white/5 p-2 rounded">
+                                                <div className="text-blue-200 text-xs">Change</div>
+                                                <div className={`font-bold ${marketData.changePercent > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                                    {marketData.changePercent > 0 ? '+' : ''}{marketData.changePercent}%
+                                                </div>
+                                            </div>
+                                            <div className="bg-white/5 p-2 rounded">
+                                                <div className="text-blue-200 text-xs">24h High</div>
+                                                <div className="text-white font-bold">${marketData.high24h?.toLocaleString()}</div>
+                                            </div>
+                                            <div className="bg-white/5 p-2 rounded">
+                                                <div className="text-blue-200 text-xs">24h Low</div>
+                                                <div className="text-white font-bold">${marketData.low24h?.toLocaleString()}</div>
+                                            </div>
+                                        </div>
 
-                                    <div className="space-y-4">
-                                        <select
-                                            value={selectedBroker}
-                                            onChange={(e) => setSelectedBroker(e.target.value)}
-                                            className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-white"
-                                        >
-                                            <option value="demo">Demo Account</option>
-                                            <option value="mt4">MetaTrader 4</option>
-                                            <option value="mt5">MetaTrader 5</option>
-                                            <option value="ib">Interactive Brokers</option>
-                                            <option value="alpaca">Alpaca</option>
-                                            <option value="binance">Binance</option>
-                                        </select>
-
-                                        {!connectedBroker ? (
-                                            <button
-                                                onClick={() => connectBroker(selectedBroker)}
-                                                disabled={loading}
-                                                className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-lg font-semibold"
-                                            >
-                                                Connect Broker
-                                            </button>
-                                        ) : (
-                                            <div className="bg-green-600/20 border border-green-400 rounded-lg p-3">
-                                                <div className="text-green-300 font-semibold mb-2">✓ Connected: {connectedBroker.name}</div>
-                                                <div className="text-sm text-white space-y-1">
-                                                    <div>Balance: ${connectedBroker.balance.toLocaleString()}</div>
-                                                    <div>Equity: ${connectedBroker.equity.toLocaleString()}</div>
-                                                    <div>Free Margin: ${connectedBroker.freeMargin.toLocaleString()}</div>
+                                        {marketData.indicators && (
+                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                                <div className="bg-blue-600/20 p-2 rounded border border-blue-400">
+                                                    <div className="text-blue-200 text-xs">RSI</div>
+                                                    <div className="text-white font-bold">{marketData.indicators.rsi?.toFixed(1)}</div>
+                                                </div>
+                                                <div className="bg-purple-600/20 p-2 rounded border border-purple-400">
+                                                    <div className="text-purple-200 text-xs">MACD</div>
+                                                    <div className="text-white font-bold">{marketData.indicators.macd?.histogram?.toFixed(2)}</div>
+                                                </div>
+                                                <div className="bg-green-600/20 p-2 rounded border border-green-400">
+                                                    <div className="text-green-200 text-xs">ADX</div>
+                                                    <div className="text-white font-bold">{marketData.indicators.adx?.toFixed(1)}</div>
                                                 </div>
                                             </div>
                                         )}
                                     </div>
-                                </div>
+                                )}
 
-                                <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-                                    <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                                        <Shield />
-                                        Risk Management
-                                    </h3>
-
-                                    <div className="space-y-4">
-                                        <div>
-                                            <label className="block text-sm text-blue-200 mb-2">Trade Size (Lots)</label>
-                                            <input
-                                                type="number"
-                                                value={tradeSize}
-                                                onChange={(e) => setTradeSize(parseFloat(e.target.value))}
-                                                step="0.01"
-                                                min="0.01"
-                                                className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-white"
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm text-blue-200 mb-2">Risk % per Trade</label>
-                                            <input
-                                                type="number"
-                                                value={riskPercent}
-                                                onChange={(e) => setRiskPercent(parseFloat(e.target.value))}
-                                                step="0.1"
-                                                min="0.1"
-                                                max="5"
-                                                className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-white"
-                                            />
-                                        </div>
-
-                                        <button
-                                            onClick={executeTrade}
-                                            disabled={!connectedBroker || !analysis || loading}
-                                            className="w-full py-3 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 disabled:from-gray-600 disabled:to-gray-700 text-white rounded-lg font-semibold flex items-center justify-center gap-2"
-                                        >
-                                            <Target />
-                                            Execute Trade
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="lg:col-span-2 space-y-6">
-                                {marketData && (
-                                    <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <h3 className="text-xl font-semibold text-white">Live Market Data - {marketData.symbol}</h3>
-                                            <span className="text-xs text-blue-300 bg-blue-600/20 px-2 py-1 rounded">{marketData.source}</span>
-                                        </div>
+                                {analysis && (
+                                    <div className="bg-white/10 rounded-xl p-4 border border-white/20">
+                                        <h3 className="text-lg font-semibold text-white mb-3">AI Analysis</h3>
                                         
-                                        {marketData.note && (
-                                            <div className="mb-4 p-2
+                                        <div className={`p-3 rounded-lg mb-3 ${
+                                            analysis.direction === 'BULLISH' ? 'bg-green-600/30 border-2 border-green-400' :
+                                            analysis.direction === 'BEARISH' ? 'bg-red-600/30 border-2 border-red-400' :
+                                            'bg-yellow-600/30 border-2 border-yellow-400'
+                                        }`}>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-lg font-bold text-white">{analysis.direction}</span>
+                                                <span className="text-white font-semibold">{analysis.confidence}%</span>
+                                            </div>
+                                        </div>
+
+                                        <div className={`p-3 rounded-lg border-2 mb-3 ${
+                                            analysis.recommendation === 'BUY' ? 'bg-green-500/20 border-green-400' :
+                                            analysis.recommendation === 'SELL' ? 'bg-red-500/20 border-red-400' :
+                                            'bg-blue-500/20 border-blue-400'
+                                        }`}>
+                                            <div className="font-bold text-white mb-1">Recommendation: {analysis.recommendation}</div>
+                                            <p className="text-sm text-blue-100">{analysis.reasoning}</p>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="bg-white/5 p-3 rounded">
+                                                <h4 className="font-semibold text-white text-sm mb-2">Trade Setup</h4>
+                                                <div className="space-y-1 text-xs">
+                                                    <div className="flex justify-between">
+                                                        <span className="text-blue-200">Entry:</span>
+                                                        <span className="text-white font-semibold">${analysis.entryPoint}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-blue-200">Stop Loss:</span>
+                                                        <span className="text-red-300 font-semibold">${analysis.stopLoss}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-blue-200">Take Profit:</span>
+                                                        <span className="text-green-300 font-semibold">${analysis.takeProfit}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-white/5 p-3 rounded">
+                                                <h4 className="font-semibold text-white text-sm mb-2">Patterns</h4>
+                                                <div className="flex flex-wrap gap-1">
+                                                    {analysis.patterns.map((p, i) => (
+                                                        <span key={i} className="text-xs px-2 py-1 bg-blue-600/40 rounded text-white">
+                                                            {p}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="mt-4 bg-yellow-600/20 border border-yellow-400 rounded-lg p-3 text-center">
+                            <p className="text-yellow-100 text-xs">
+                                <strong>Disclaimer:</strong> For educational purposes only. Trade at your own risk.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
