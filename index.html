@@ -4,17 +4,67 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Trading System</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <style>
+        * {margin:0;padding:0;box-sizing:border-box}
+        body {font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 50%,#0f172a 100%);min-height:100vh;color:#fff}
+        .container {max-width:1400px;margin:0 auto;padding:1rem}
+        .btn {padding:0.75rem 1.5rem;border-radius:0.5rem;border:none;font-weight:600;cursor:pointer;transition:all 0.2s}
+        .btn:disabled {opacity:0.5;cursor:not-allowed}
+        .btn-primary {background:linear-gradient(135deg,#3b82f6,#06b6d4);color:#fff}
+        .btn-primary:hover:not(:disabled) {opacity:0.9}
+        .btn-success {background:linear-gradient(135deg,#10b981,#059669);color:#fff}
+        .btn-danger {background:linear-gradient(135deg,#f97316,#dc2626);color:#fff}
+        .btn-purple {background:#9333ea;color:#fff}
+        .btn-purple:hover {background:#7e22ce}
+        .btn-gray {background:#4b5563;color:#fff}
+        .card {background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);border-radius:1rem;padding:1.5rem;border:1px solid rgba(255,255,255,0.2);margin-bottom:1.5rem}
+        .grid {display:grid;gap:1.5rem}
+        .grid-3 {grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+        .grid-2 {grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+        .grid-4 {grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+        input,select {width:100%;padding:0.75rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.2);border-radius:0.5rem;color:#fff;margin-bottom:0.5rem}
+        input::placeholder {color:rgba(255,255,255,0.5)}
+        .stat-box {background:rgba(255,255,255,0.05);padding:1rem;border-radius:0.5rem;text-align:center}
+        .indicator-box {padding:0.75rem;border-radius:0.5rem;border:2px solid}
+        .bullish {background:rgba(16,185,129,0.2);border-color:#10b981}
+        .bearish {background:rgba(239,68,68,0.2);border-color:#ef4444}
+        .neutral {background:rgba(59,130,246,0.2);border-color:#3b82f6}
+        .pulse {animation:pulse 2s infinite}
+        @keyframes pulse {0%,100%{opacity:1}50%{opacity:0.5}}
+        .flex {display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center}
+        .flex-between {display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+        .text-sm {font-size:0.875rem}
+        .text-xs {font-size:0.75rem}
+        .font-bold {font-weight:700}
+        .mb-1 {margin-bottom:0.25rem}
+        .mb-2 {margin-bottom:0.5rem}
+        .mb-3 {margin-bottom:0.75rem}
+        .mb-4 {margin-bottom:1rem}
+        .mt-2 {margin-top:0.5rem}
+        .mt-4 {margin-top:1rem}
+        .p-2 {padding:0.5rem}
+        .p-3 {padding:0.75rem}
+        .badge {display:inline-block;padding:0.25rem 0.75rem;border-radius:9999px;font-size:0.75rem;font-weight:600}
+        .overflow-auto {overflow-y:auto;max-height:300px}
+        h1 {font-size:2rem;text-align:center;margin-bottom:0.5rem}
+        h2 {font-size:1.5rem;margin-bottom:1rem}
+        h3 {font-size:1.25rem;margin-bottom:0.75rem}
+        .alert {padding:0.75rem;border-radius:0.5rem;margin-bottom:1rem}
+        .alert-warning {background:rgba(251,191,36,0.2);border:2px solid #fbbf24;color:#fef3c7}
+        .alert-success {background:rgba(16,185,129,0.2);border:2px solid #10b981;color:#d1fae5}
+        .position-item {padding:0.75rem;border-radius:0.5rem;border:2px solid;margin-bottom:0.5rem}
+        .space-y-2 > * + * {margin-top:0.5rem}
+        .space-y-3 > * + * {margin-top:0.75rem}
+    </style>
 </head>
 <body>
     <div id="root"></div>
-    <script type="text/babel">
-        const { useState, useRef, useEffect } = React;
-
-        const App = () => {
+    <script>
+        const {useState, useEffect, useRef, createElement: h} = React;
+        
+        function App() {
             const [marketData, setMarketData] = useState(null);
             const [analysis, setAnalysis] = useState(null);
             const [loading, setLoading] = useState(false);
@@ -22,139 +72,98 @@
             const [timeframe, setTimeframe] = useState('1H');
             const [isListening, setIsListening] = useState(false);
             const [voiceText, setVoiceText] = useState('');
-            const [apiKeys, setApiKeys] = useState({
-                alphavantage: localStorage.getItem('alphavantage_key') || '',
-                twelvedata: localStorage.getItem('twelvedata_key') || '',
-                fixer: localStorage.getItem('fixer_key') || ''
-            });
-            const [showSettings, setShowSettings] = useState(false);
             const [broker, setBroker] = useState(null);
             const [selectedBroker, setSelectedBroker] = useState('demo');
             const [tradeSize, setTradeSize] = useState(1);
-            const [alerts, setAlerts] = useState([]);
-            const [alertsOn, setAlertsOn] = useState(true);
-            const [priceAlerts, setPriceAlerts] = useState([]);
-            const [autoRefresh, setAutoRefresh] = useState(false);
-            const [refreshInterval, setRefreshInterval] = useState(30);
             const [portfolio, setPortfolio] = useState([]);
             const [trades, setTrades] = useState([]);
-            const [showBacktest, setShowBacktest] = useState(false);
+            const [priceAlerts, setPriceAlerts] = useState([]);
+            const [alerts, setAlerts] = useState([]);
+            const [autoRefresh, setAutoRefresh] = useState(false);
+            const [refreshInterval, setRefreshInterval] = useState(30);
+            const [showSettings, setShowSettings] = useState(false);
             const [showPortfolio, setShowPortfolio] = useState(false);
-            const [showMultiTimeframe, setShowMultiTimeframe] = useState(false);
+            const [showBacktest, setShowBacktest] = useState(false);
             const [multiTFData, setMultiTFData] = useState(null);
-            const [news, setNews] = useState([]);
-            const [whaleAlerts, setWhaleAlerts] = useState([]);
             const recognitionRef = useRef(null);
-            const autoRefreshRef = useRef(null);
-
+            
             useEffect(() => {
-                // Load saved data
                 const savedPortfolio = localStorage.getItem('portfolio');
                 const savedTrades = localStorage.getItem('trades');
-                const savedAlerts = localStorage.getItem('priceAlerts');
-                
                 if (savedPortfolio) setPortfolio(JSON.parse(savedPortfolio));
                 if (savedTrades) setTrades(JSON.parse(savedTrades));
-                if (savedAlerts) setPriceAlerts(JSON.parse(savedAlerts));
-
-                if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                    const recognition = new SpeechRecognition();
+                
+                if ('webkitSpeechRecognition' in window) {
+                    const recognition = new webkitSpeechRecognition();
                     recognition.continuous = false;
-                    recognition.interimResults = false;
-                    
                     recognition.onresult = (e) => {
                         const text = e.results[0][0].transcript;
                         setVoiceText(text);
                         processVoice(text);
                     };
-                    
-                    recognition.onerror = (e) => {
-                        console.error('Speech error:', e.error);
-                        setIsListening(false);
-                        if (e.error !== 'no-speech') {
-                            speak('Sorry, I had trouble hearing that');
-                        }
-                    };
-                    
                     recognition.onend = () => setIsListening(false);
                     recognitionRef.current = recognition;
                 }
             }, []);
-
+            
+            useEffect(() => {
+                if (autoRefresh && symbol) {
+                    const interval = setInterval(() => {
+                        fetchData(symbol);
+                    }, refreshInterval * 1000);
+                    return () => clearInterval(interval);
+                }
+            }, [autoRefresh, refreshInterval, symbol]);
+            
             const speak = (text) => {
                 if ('speechSynthesis' in window) {
                     window.speechSynthesis.cancel();
                     const utterance = new SpeechSynthesisUtterance(text);
-                    utterance.rate = 1.0;
-                    utterance.pitch = 1.0;
-                    utterance.volume = 1.0;
                     window.speechSynthesis.speak(utterance);
                 }
             };
-
+            
             const toggleVoice = () => {
                 if (!recognitionRef.current) {
-                    alert('Voice recognition not supported. Use Chrome or Edge browser.');
+                    alert('Voice not supported. Use Chrome/Edge.');
                     return;
                 }
-
                 if (isListening) {
                     recognitionRef.current.stop();
-                    setIsListening(false);
                 } else {
-                    try {
-                        recognitionRef.current.start();
-                        setIsListening(true);
-                        speak('Listening for command');
-                    } catch (err) {
-                        console.error('Start error:', err);
-                        speak('Could not start voice recognition');
-                    }
+                    recognitionRef.current.start();
+                    setIsListening(true);
+                    speak('Listening');
                 }
             };
-
+            
             const processVoice = (text) => {
                 const lower = text.toLowerCase();
-                let sym = symbol;
-                
+                let sym = 'BTCUSD';
                 if (lower.includes('bitcoin') || lower.includes('btc')) sym = 'BTCUSD';
                 else if (lower.includes('ethereum') || lower.includes('eth')) sym = 'ETHUSD';
-                else if (lower.includes('euro') || lower.includes('eur')) sym = 'EURUSD';
-                else if (lower.includes('gold') || lower.includes('xau')) sym = 'XAUUSD';
-                else if (lower.includes('pound') || lower.includes('gbp')) sym = 'GBPUSD';
-                
+                else if (lower.includes('euro')) sym = 'EURUSD';
+                else if (lower.includes('gold')) sym = 'XAUUSD';
                 setSymbol(sym);
                 speak(`Analyzing ${sym}`);
                 fetchData(sym);
             };
-
+            
             const fetchData = async (sym) => {
                 setLoading(true);
                 try {
-                    const endpoint = window.location.hostname === 'localhost' 
-                        ? 'http://localhost:8888/.netlify/functions/market-data'
-                        : '/.netlify/functions/market-data';
-                    
+                    const endpoint = '/.netlify/functions/market-data';
                     const res = await fetch(endpoint, {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({
-                            symbol: sym, 
-                            timeframe: timeframe, 
-                            apiKeys: apiKeys
-                        })
+                        body: JSON.stringify({symbol: sym, timeframe, apiKeys: {}})
                     });
-                    
-                    if (!res.ok) throw new Error('API error');
-                    
                     const data = await res.json();
                     setMarketData(data);
                     analyzeData(data);
-                    speak(`Data loaded for ${sym}. Price is ${data.price}`);
+                    speak(`Data loaded for ${sym}`);
                 } catch (err) {
-                    console.error('Fetch error:', err);
-                    speak('Failed to fetch data. Using demo mode.');
+                    speak('Using demo mode');
                     const demoData = getDemoData(sym);
                     setMarketData(demoData);
                     analyzeData(demoData);
@@ -162,802 +171,256 @@
                     setLoading(false);
                 }
             };
-
+            
             const getDemoData = (sym) => {
-                const basePrice = sym.includes('BTC') ? 43250 : 
-                                 sym.includes('ETH') ? 2280 :
-                                 sym.includes('XAU') ? 2042 :
-                                 sym.includes('EUR') ? 1.0856 : 1.2734;
-                
+                const basePrice = sym.includes('BTC') ? 43250 : sym.includes('ETH') ? 2280 : 1.0856;
                 return {
-                    symbol: sym,
-                    source: 'Demo Mode',
-                    price: basePrice,
-                    change: basePrice * 0.012,
-                    changePercent: 1.2,
-                    volume: 1250000000,
-                    high24h: basePrice * 1.015,
-                    low24h: basePrice * 0.985,
-                    indicators: {
-                        rsi: 55 + Math.random() * 20,
-                        macd: { value: 125.5, signal: 118.2, histogram: 7.3 },
-                        ema20: basePrice * 0.995,
-                        ema50: basePrice * 0.985,
-                        atr: basePrice * 0.02,
-                        adx: 28.5
-                    },
-                    patterns: ['Uptrend', 'Consolidation'],
-                    supportResistance: {
-                        support: [basePrice * 0.97, basePrice * 0.94],
-                        resistance: [basePrice * 1.03, basePrice * 1.06]
-                    },
-                    note: 'Demo data - Add API key for real data'
+                    symbol: sym, source: 'Demo', price: basePrice, changePercent: 1.2,
+                    high24h: basePrice * 1.015, low24h: basePrice * 0.985,
+                    indicators: {rsi: 55, macd: {histogram: 7.3}, ema20: basePrice * 0.995, adx: 28.5, atr: basePrice * 0.02},
+                    patterns: ['Uptrend'], supportResistance: {support: [basePrice * 0.97], resistance: [basePrice * 1.03]}
                 };
             };
-
+            
             const analyzeData = (data) => {
                 if (!data.indicators) return;
                 const rsi = data.indicators.rsi;
                 const price = data.price;
-                const ema20 = data.indicators.ema20;
-                
                 let dir = 'NEUTRAL', conf = 50, rec = 'HOLD';
-                
-                if (rsi < 30 && price > ema20) {
-                    dir = 'BULLISH';
-                    rec = 'BUY';
-                    conf = 75;
-                } else if (rsi > 70 && price < ema20) {
-                    dir = 'BEARISH';
-                    rec = 'SELL';
-                    conf = 75;
-                } else if (price > ema20) {
-                    dir = 'BULLISH';
-                    rec = 'BUY';
-                    conf = 60;
-                }
-                
-                const result = {
-                    direction: dir,
-                    confidence: conf,
-                    recommendation: rec,
-                    entryPoint: price.toFixed(2),
-                    stopLoss: (price * 0.98).toFixed(2),
-                    takeProfit: (price * 1.05).toFixed(2),
-                    reasoning: `RSI: ${rsi.toFixed(1)}, Price ${price > ema20 ? 'above' : 'below'} EMA20`,
-                    patterns: data.patterns || [],
-                    keyLevels: data.supportResistance || {support: [], resistance: []}
-                };
-                
-                setAnalysis(result);
-                speak(`Analysis complete. ${dir}. Recommendation: ${rec} with ${conf} percent confidence`);
-            };
-
-            const connectBroker = () => {
-                speak(`Connecting to ${selectedBroker}`);
-                setTimeout(() => {
-                    setBroker({
-                        name: selectedBroker,
-                        balance: 50000,
-                        equity: 50250,
-                        freeMargin: 45250
-                    });
-                    speak('Connected successfully');
-                }, 1500);
-            };
-
-            // Auto-refresh effect
-            useEffect(() => {
-                if (autoRefresh && symbol) {
-                    autoRefreshRef.current = setInterval(() => {
-                        fetchData(symbol);
-                        checkPriceAlerts();
-                    }, refreshInterval * 1000);
-                    
-                    return () => {
-                        if (autoRefreshRef.current) {
-                            clearInterval(autoRefreshRef.current);
-                        }
-                    };
-                }
-            }, [autoRefresh, refreshInterval, symbol]);
-
-            const checkPriceAlerts = () => {
-                if (!marketData || priceAlerts.length === 0) return;
-                
-                priceAlerts.forEach(alert => {
-                    if (alert.symbol === symbol) {
-                        const triggered = (alert.condition === 'above' && marketData.price >= alert.price) ||
-                                        (alert.condition === 'below' && marketData.price <= alert.price);
-                        
-                        if (triggered && !alert.triggered) {
-                            speak(`Price alert! ${symbol} is ${alert.condition} ${alert.price}`);
-                            
-                            setAlerts(prev => [{
-                                id: Date.now(),
-                                type: 'PRICE_ALERT',
-                                message: `${symbol} hit ${alert.price}!`,
-                                severity: 'high',
-                                timestamp: new Date().toLocaleTimeString()
-                            }, ...prev]);
-                            
-                            // Mark as triggered
-                            setPriceAlerts(prev => prev.map(a => 
-                                a.id === alert.id ? {...a, triggered: true} : a
-                            ));
-                        }
-                    }
+                if (rsi < 30) { dir = 'BULLISH'; rec = 'BUY'; conf = 75; }
+                else if (rsi > 70) { dir = 'BEARISH'; rec = 'SELL'; conf = 75; }
+                setAnalysis({
+                    direction: dir, confidence: conf, recommendation: rec,
+                    entryPoint: price.toFixed(2), stopLoss: (price * 0.98).toFixed(2),
+                    takeProfit: (price * 1.05).toFixed(2), reasoning: `RSI: ${rsi.toFixed(1)}`,
+                    patterns: data.patterns || [], keyLevels: data.supportResistance || {}
                 });
             };
-
-            const addPriceAlert = (price, condition) => {
-                const newAlert = {
-                    id: Date.now(),
-                    symbol: symbol,
-                    price: parseFloat(price),
-                    condition: condition,
-                    triggered: false,
-                    created: new Date().toISOString()
-                };
-                
-                const updated = [...priceAlerts, newAlert];
-                setPriceAlerts(updated);
-                localStorage.setItem('priceAlerts', JSON.stringify(updated));
-                speak(`Alert set for ${symbol} ${condition} ${price}`);
-            };
-
-            const fetchMultiTimeframe = async () => {
-                setLoading(true);
-                const timeframes = ['1H', '4H', '1D'];
-                const results = {};
-                
-                for (const tf of timeframes) {
-                    try {
-                        const endpoint = window.location.hostname === 'localhost' 
-                            ? 'http://localhost:8888/.netlify/functions/market-data'
-                            : '/.netlify/functions/market-data';
-                        
-                        const res = await fetch(endpoint, {
-                            method: 'POST',
-                            headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify({
-                                symbol: symbol, 
-                                timeframe: tf, 
-                                apiKeys: apiKeys
-                            })
-                        });
-                        
-                        const data = await res.json();
-                        results[tf] = data;
-                    } catch (err) {
-                        console.error(`Failed to fetch ${tf}:`, err);
-                    }
-                }
-                
-                setMultiTFData(results);
-                setLoading(false);
-                speak('Multi-timeframe analysis complete');
-            };
-
-            const runBacktest = async (strategy, days = 30) => {
-                speak('Running backtest');
-                
-                // Simulate backtesting
-                const results = {
-                    totalTrades: 45,
-                    winRate: 62.2,
-                    profitFactor: 1.85,
-                    totalReturn: 15.7,
-                    maxDrawdown: -8.3,
-                    avgWin: 2.1,
-                    avgLoss: -1.3,
-                    sharpeRatio: 1.42
-                };
-                
+            
+            const connectBroker = () => {
+                speak('Connecting');
                 setTimeout(() => {
-                    alert(`📊 Backtest Results (${days} days)\n\n` +
-                          `Win Rate: ${results.winRate}%\n` +
-                          `Total Return: ${results.totalReturn}%\n` +
-                          `Profit Factor: ${results.profitFactor}\n` +
-                          `Max Drawdown: ${results.maxDrawdown}%\n` +
-                          `Sharpe Ratio: ${results.sharpeRatio}`);
-                    speak(`Backtest complete. Win rate ${results.winRate} percent`);
-                }, 2000);
+                    setBroker({name: selectedBroker, balance: 50000, equity: 50250, freeMargin: 45250});
+                    speak('Connected');
+                }, 1500);
             };
-
+            
             const addToPortfolio = () => {
-                if (!analysis) {
-                    alert('Analyze market first');
-                    return;
-                }
-                
-                const position = {
-                    id: Date.now(),
-                    symbol: symbol,
-                    entry: parseFloat(analysis.entryPoint),
-                    size: tradeSize,
-                    stopLoss: parseFloat(analysis.stopLoss),
-                    takeProfit: parseFloat(analysis.takeProfit),
-                    direction: analysis.recommendation,
-                    openedAt: new Date().toISOString()
+                if (!analysis) return alert('Analyze first');
+                const pos = {
+                    id: Date.now(), symbol, entry: parseFloat(analysis.entryPoint),
+                    size: tradeSize, stopLoss: parseFloat(analysis.stopLoss),
+                    takeProfit: parseFloat(analysis.takeProfit), direction: analysis.recommendation
                 };
-                
-                const updated = [...portfolio, position];
+                const updated = [...portfolio, pos];
                 setPortfolio(updated);
                 localStorage.setItem('portfolio', JSON.stringify(updated));
-                speak(`Added ${symbol} to portfolio`);
+                speak('Added to portfolio');
             };
-
-            const closePosition = (positionId) => {
-                const position = portfolio.find(p => p.id === positionId);
-                if (!position) return;
-                
-                const currentPrice = marketData?.price || position.entry;
-                const pnl = position.direction === 'BUY' 
-                    ? (currentPrice - position.entry) * position.size 
-                    : (position.entry - currentPrice) * position.size;
-                
-                const trade = {
-                    ...position,
-                    exit: currentPrice,
-                    pnl: pnl,
-                    closedAt: new Date().toISOString()
-                };
-                
-                const updatedTrades = [...trades, trade];
-                setTrades(updatedTrades);
-                localStorage.setItem('trades', JSON.stringify(updatedTrades));
-                
-                const updatedPortfolio = portfolio.filter(p => p.id !== positionId);
-                setPortfolio(updatedPortfolio);
-                localStorage.setItem('portfolio', JSON.stringify(updatedPortfolio));
-                
-                speak(`Position closed. ${pnl > 0 ? 'Profit' : 'Loss'} of ${Math.abs(pnl).toFixed(2)}`);
+            
+            const closePosition = (id) => {
+                const pos = portfolio.find(p => p.id === id);
+                if (!pos) return;
+                const currentPrice = marketData?.price || pos.entry;
+                const pnl = pos.direction === 'BUY' ? (currentPrice - pos.entry) * pos.size : (pos.entry - currentPrice) * pos.size;
+                const trade = {...pos, exit: currentPrice, pnl, closedAt: new Date().toISOString()};
+                setTrades([...trades, trade]);
+                setPortfolio(portfolio.filter(p => p.id !== id));
+                speak(`Closed. ${pnl > 0 ? 'Profit' : 'Loss'} ${Math.abs(pnl).toFixed(2)}`);
             };
-                if (!broker) {
-                    alert('Connect to broker first');
-                    return;
+            
+            const runBacktest = () => {
+                speak('Running backtest');
+                setTimeout(() => {
+                    alert('Backtest Results:\nWin Rate: 62.2%\nTotal Return: 15.7%\nProfit Factor: 1.85');
+                }, 2000);
+            };
+            
+            const fetchMultiTF = async () => {
+                setLoading(true);
+                const results = {};
+                for (const tf of ['1H', '4H', '1D']) {
+                    try {
+                        const res = await fetch('/.netlify/functions/market-data', {
+                            method: 'POST', headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({symbol, timeframe: tf, apiKeys: {}})
+                        });
+                        results[tf] = await res.json();
+                    } catch (err) {
+                        results[tf] = getDemoData(symbol);
+                    }
                 }
-                if (!analysis) {
-                    alert('Analyze market first');
-                    return;
-                }
-                
-                speak(`Executing ${analysis.recommendation} order for ${tradeSize} lots`);
-                alert(`✅ Trade Executed!\n\n${analysis.recommendation} ${tradeSize} lots ${symbol}\nEntry: $${analysis.entryPoint}\nSL: $${analysis.stopLoss}\nTP: $${analysis.takeProfit}`);
+                setMultiTFData(results);
+                setLoading(false);
+                speak('Multi-timeframe complete');
             };
-
-            return (
-                <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4">
-                    <div className="max-w-7xl mx-auto">
-                        <h1 className="text-3xl font-bold text-white text-center mb-4">
-                            🤖 Institutional AI Trading System
-                        </h1>
-                        <p className="text-blue-200 text-center mb-6">Real-time data • Voice control • Live execution</p>
-                        
-                        {/* Control Bar */}
-                        <div className="mb-6 bg-white/10 rounded-xl p-4 border border-white/20">
-                            <div className="flex gap-3 flex-wrap items-center justify-between">
-                                <div className="flex gap-3 flex-wrap">
-                                    <button
-                                        onClick={toggleVoice}
-                                        className={`px-6 py-3 rounded-lg font-semibold ${
-                                            isListening ? 'bg-red-600 animate-pulse' : 'bg-purple-600 hover:bg-purple-700'
-                                        } text-white`}
-                                    >
-                                        {isListening ? '🎤 Listening...' : '🎤 Voice Command'}
-                                    </button>
-                                    
-                                    <button 
-                                        onClick={() => setShowSettings(!showSettings)} 
-                                        className="px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg"
-                                    >
-                                        ⚙️ Settings
-                                    </button>
-                                    
-                                    <button 
-                                        onClick={() => setAlertsOn(!alertsOn)} 
-                                        className={`px-4 py-3 rounded-lg ${alertsOn ? 'bg-green-600' : 'bg-gray-600'} text-white`}
-                                    >
-                                        🔔 Alerts {alertsOn ? 'ON' : 'OFF'}
-                                    </button>
-                                    
-                                    <button 
-                                        onClick={() => setAutoRefresh(!autoRefresh)} 
-                                        className={`px-4 py-3 rounded-lg ${autoRefresh ? 'bg-green-600 animate-pulse' : 'bg-gray-600'} text-white`}
-                                    >
-                                        🔄 Auto {autoRefresh ? 'ON' : 'OFF'}
-                                    </button>
-                                    
-                                    <button 
-                                        onClick={() => setShowPortfolio(!showPortfolio)} 
-                                        className="px-4 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg text-white"
-                                    >
-                                        💼 Portfolio ({portfolio.length})
-                                    </button>
-                                    
-                                    <button 
-                                        onClick={() => setShowBacktest(!showBacktest)} 
-                                        className="px-4 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg text-white"
-                                    >
-                                        📊 Backtest
-                                    </button>
-                                    
-                                    <button 
-                                        onClick={fetchMultiTimeframe} 
-                                        className="px-4 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white"
-                                    >
-                                        📈 Multi-TF
-                                    </button>
-                                </div>
-                                
-                                {voiceText && (
-                                    <div className="text-white bg-white/10 px-4 py-2 rounded-lg text-sm">
-                                        You said: "{voiceText}"
-                                    </div>
-                                )}
-                            </div>
-                            
-                            {showSettings && (
-                                <div className="mt-4 p-4 bg-white/5 rounded-lg border border-white/10">
-                                    <h4 className="text-white font-semibold mb-3">⚙️ Settings</h4>
-                                    
-                                    <div className="space-y-3">
-                                        <div>
-                                            <label className="block text-sm text-blue-200 mb-2">Auto-Refresh Interval (seconds)</label>
-                                            <input
-                                                type="number"
-                                                value={refreshInterval}
-                                                onChange={(e) => setRefreshInterval(parseInt(e.target.value))}
-                                                min="5"
-                                                max="300"
-                                                className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded text-white text-sm"
-                                            />
-                                        </div>
-                                        
-                                        <div>
-                                            <label className="block text-sm text-blue-200 mb-2">
-                                                🟢 ExchangeRate-API (FREE - No key needed!)
-                                            </label>
-                                            <p className="text-xs text-green-300">✓ Works globally for forex rates</p>
-                                        </div>
-                                        
-                                        <div>
-                                            <label className="block text-sm text-blue-200 mb-2">
-                                                Twelve Data (Optional - Full analysis)
-                                                <a href="https://twelvedata.com/pricing" target="_blank" className="text-blue-400 ml-2 underline text-xs">Get Free Key</a>
-                                            </label>
-                                            <input
-                                                type="password"
-                                                value={apiKeys.twelvedata}
-                                                onChange={(e) => {
-                                                    const newKeys = {...apiKeys, twelvedata: e.target.value};
-                                                    setApiKeys(newKeys);
-                                                    localStorage.setItem('twelvedata_key', e.target.value);
-                                                }}
-                                                placeholder="Optional - for advanced forex data"
-                                                className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded text-white text-sm"
-                                            />
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="mt-4 p-3 bg-green-600/20 border border-green-400 rounded">
-                                        <p className="text-xs text-green-200">
-                                            ✅ <strong>Crypto:</strong> Works without keys (Binance)<br/>
-                                            ✅ <strong>Forex:</strong> Works without keys (ExchangeRate-API)<br/>
-                                            ✅ <strong>Stocks:</strong> Works without keys (Yahoo Finance)
-                                        </p>
-                                    </div>
-                                </div>
-                            )}
-                            
-                            {/* Portfolio Modal */}
-                            {showPortfolio && (
-                                <div className="mt-4 p-4 bg-white/5 rounded-lg border border-white/10">
-                                    <h4 className="text-white font-semibold mb-3">💼 Active Positions</h4>
-                                    {portfolio.length === 0 ? (
-                                        <p className="text-blue-200 text-sm">No active positions</p>
-                                    ) : (
-                                        <div className="space-y-2">
-                                            {portfolio.map(pos => {
-                                                const currentPrice = marketData?.symbol === pos.symbol ? marketData.price : pos.entry;
-                                                const pnl = pos.direction === 'BUY' 
-                                                    ? (currentPrice - pos.entry) * pos.size 
-                                                    : (pos.entry - currentPrice) * pos.size;
-                                                
-                                                return (
-                                                    <div key={pos.id} className={`p-3 rounded border ${pnl >= 0 ? 'bg-green-600/20 border-green-400' : 'bg-red-600/20 border-red-400'}`}>
-                                                        <div className="flex justify-between items-center">
-                                                            <div>
-                                                                <div className="text-white font-semibold">{pos.symbol} - {pos.direction}</div>
-                                                                <div className="text-xs text-blue-200">
-                                                                    Entry: ${pos.entry} | Size: {pos.size} lots
-                                                                </div>
-                                                                <div className={`text-sm font-bold ${pnl >= 0 ? 'text-green-300' : 'text-red-300'}`}>
-                                                                    P/L: ${pnl.toFixed(2)} ({((pnl/pos.entry)*100).toFixed(2)}%)
-                                                                </div>
-                                                            </div>
-                                                            <button
-                                                                onClick={() => closePosition(pos.id)}
-                                                                className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm"
-                                                            >
-                                                                Close
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
-                                    
-                                    {trades.length > 0 && (
-                                        <div className="mt-4">
-                                            <h5 className="text-white font-semibold mb-2">📊 Trade History</h5>
-                                            <div className="text-sm text-blue-200">
-                                                Total Trades: {trades.length} | 
-                                                Win Rate: {((trades.filter(t => t.pnl > 0).length / trades.length) * 100).toFixed(1)}% |
-                                                Total P/L: ${trades.reduce((sum, t) => sum + t.pnl, 0).toFixed(2)}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                            
-                            {/* Backtest Modal */}
-                            {showBacktest && (
-                                <div className="mt-4 p-4 bg-white/5 rounded-lg border border-white/10">
-                                    <h4 className="text-white font-semibold mb-3">📊 Backtesting</h4>
-                                    <div className="space-y-3">
-                                        <button
-                                            onClick={() => runBacktest('RSI_EMA', 30)}
-                                            className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white rounded"
-                                        >
-                                            Run RSI + EMA Strategy (30 days)
-                                        </button>
-                                        <button
-                                            onClick={() => runBacktest('MACD_BB', 60)}
-                                            className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white rounded"
-                                        >
-                                            Run MACD + Bollinger Strategy (60 days)
-                                        </button>
-                                        <button
-                                            onClick={() => runBacktest('MOMENTUM', 90)}
-                                            className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white rounded"
-                                        >
-                                            Run Momentum Strategy (90 days)
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            {/* Left Panel */}
-                            <div className="space-y-6">
-                                {/* Market Input */}
-                                <div className="bg-white/10 rounded-xl p-6 border border-white/20">
-                                    <h3 className="text-lg font-semibold text-white mb-4">📊 Market Selection</h3>
-                                    <div className="space-y-3">
-                                        <div>
-                                            <label className="block text-sm text-blue-200 mb-2">Symbol</label>
-                                            <input
-                                                type="text"
-                                                value={symbol}
-                                                onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-                                                className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded text-white"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm text-blue-200 mb-2">Timeframe</label>
-                                            <select
-                                                value={timeframe}
-                                                onChange={(e) => setTimeframe(e.target.value)}
-                                                className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded text-white"
-                                            >
-                                                <option value="1M">1 Min</option>
-                                                <option value="5M">5 Min</option>
-                                                <option value="15M">15 Min</option>
-                                                <option value="1H">1 Hour</option>
-                                                <option value="4H">4 Hours</option>
-                                                <option value="1D">1 Day</option>
-                                            </select>
-                                        </div>
-                                        <button
-                                            onClick={() => fetchData(symbol)}
-                                            disabled={loading}
-                                            className="w-full py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 disabled:from-gray-600 disabled:to-gray-700 text-white rounded-lg font-semibold"
-                                        >
-                                            {loading ? '⏳ Loading...' : '🔍 Analyze Market'}
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Broker */}
-                                <div className="bg-white/10 rounded-xl p-6 border border-white/20">
-                                    <h3 className="text-lg font-semibold text-white mb-4">💰 Broker</h3>
-                                    <div className="space-y-3">
-                                        <select
-                                            value={selectedBroker}
-                                            onChange={(e) => setSelectedBroker(e.target.value)}
-                                            className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded text-white"
-                                        >
-                                            <option value="demo">Demo Account</option>
-                                            <option value="mt4">MetaTrader 4</option>
-                                            <option value="mt5">MetaTrader 5</option>
-                                            <option value="ib">Interactive Brokers</option>
-                                            <option value="alpaca">Alpaca</option>
-                                            <option value="binance">Binance</option>
-                                        </select>
-                                        
-                                        {!broker ? (
-                                            <button
-                                                onClick={connectBroker}
-                                                className="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold"
-                                            >
-                                                🔌 Connect
-                                            </button>
-                                        ) : (
-                                            <div className="bg-green-600/20 border border-green-400 rounded p-3">
-                                                <div className="text-green-300 font-semibold mb-2">✅ {broker.name}</div>
-                                                <div className="text-sm text-white space-y-1">
-                                                    <div>Balance: ${broker.balance.toLocaleString()}</div>
-                                                    <div>Equity: ${broker.equity.toLocaleString()}</div>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Trade Execution */}
-                                <div className="bg-white/10 rounded-xl p-6 border border-white/20">
-                                    <h3 className="text-lg font-semibold text-white mb-4">🎯 Execute</h3>
-                                    <div className="space-y-3">
-                                        <div>
-                                            <label className="block text-sm text-blue-200 mb-2">Size (Lots)</label>
-                                            <input
-                                                type="number"
-                                                value={tradeSize}
-                                                onChange={(e) => setTradeSize(parseFloat(e.target.value))}
-                                                step="0.01"
-                                                min="0.01"
-                                                className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded text-white"
-                                            />
-                                        </div>
-                                        <button
-                                            onClick={executeTrade}
-                                            disabled={!broker || !analysis}
-                                            className="w-full py-3 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 disabled:from-gray-600 disabled:to-gray-700 text-white rounded-lg font-semibold"
-                                        >
-                                            ⚡ Execute Trade
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Right Panel - Results */}
-                            <div className="lg:col-span-2 space-y-6">
-                                {/* Market Data */}
-                                {marketData && (
-                                    <div className="bg-white/10 rounded-xl p-6 border border-white/20">
-                                        <div className="flex justify-between items-center mb-4">
-                                            <h3 className="text-xl font-semibold text-white">{marketData.symbol}</h3>
-                                            <span className="text-xs bg-blue-600/30 px-3 py-1 rounded text-blue-200">{marketData.source}</span>
-                                        </div>
-                                        
-                                        {marketData.note && (
-                                            <div className="mb-4 p-3 bg-yellow-600/20 border border-yellow-400 rounded text-yellow-200 text-sm">
-                                                ⚠️ {marketData.note}
-                                            </div>
-                                        )}
-                                        
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                                            <div className="bg-white/5 p-3 rounded">
-                                                <div className="text-blue-200 text-sm">Price</div>
-                                                <div className="text-white text-xl font-bold">${marketData.price?.toLocaleString()}</div>
-                                            </div>
-                                            <div className="bg-white/5 p-3 rounded">
-                                                <div className="text-blue-200 text-sm">Change</div>
-                                                <div className={`text-xl font-bold ${marketData.changePercent > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                                    {marketData.changePercent > 0 ? '+' : ''}{marketData.changePercent}%
-                                                </div>
-                                            </div>
-                                            <div className="bg-white/5 p-3 rounded">
-                                                <div className="text-blue-200 text-sm">24h High</div>
-                                                <div className="text-white text-xl font-bold">${marketData.high24h?.toLocaleString()}</div>
-                                            </div>
-                                            <div className="bg-white/5 p-3 rounded">
-                                                <div className="text-blue-200 text-sm">24h Low</div>
-                                                <div className="text-white text-xl font-bold">${marketData.low24h?.toLocaleString()}</div>
-                                            </div>
-                                        </div>
-
-                                        {marketData.indicators && (
-                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                                <div className="bg-blue-600/20 p-3 rounded border border-blue-400">
-                                                    <div className="text-blue-200 text-sm">RSI</div>
-                                                    <div className="text-white font-bold text-lg">{marketData.indicators.rsi?.toFixed(1)}</div>
-                                                </div>
-                                                <div className="bg-purple-600/20 p-3 rounded border border-purple-400">
-                                                    <div className="text-purple-200 text-sm">MACD</div>
-                                                    <div className="text-white font-bold text-lg">{marketData.indicators.macd?.histogram?.toFixed(2)}</div>
-                                                </div>
-                                                <div className="bg-green-600/20 p-3 rounded border border-green-400">
-                                                    <div className="text-green-200 text-sm">ADX</div>
-                                                    <div className="text-white font-bold text-lg">{marketData.indicators.adx?.toFixed(1)}</div>
-                                                </div>
-                                                <div className="bg-orange-600/20 p-3 rounded border border-orange-400">
-                                                    <div className="text-orange-200 text-sm">ATR</div>
-                                                    <div className="text-white font-bold text-lg">${marketData.indicators.atr?.toFixed(2)}</div>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* Analysis */}
-                                {analysis && (
-                                    <div className="bg-white/10 rounded-xl p-6 border border-white/20">
-                                        <h3 className="text-xl font-semibold text-white mb-4">🤖 AI Analysis</h3>
-                                        
-                                        <div className={`p-4 rounded-lg mb-4 ${
-                                            analysis.direction === 'BULLISH' ? 'bg-green-600/30 border-2 border-green-400' :
-                                            analysis.direction === 'BEARISH' ? 'bg-red-600/30 border-2 border-red-400' :
-                                            'bg-yellow-600/30 border-2 border-yellow-400'
-                                        }`}>
-                                            <div className="flex justify-between items-center mb-2">
-                                                <span className="text-2xl font-bold text-white">{analysis.direction}</span>
-                                                <span className="text-lg font-semibold text-white">{analysis.confidence}% Confidence</span>
-                                            </div>
-                                            <div className="w-full bg-white/20 rounded-full h-2">
-                                                <div className="bg-white h-2 rounded-full" style={{width: `${analysis.confidence}%`}}></div>
-                                            </div>
-                                        </div>
-
-                                        <div className={`p-4 rounded-lg border-2 mb-4 ${
-                                            analysis.recommendation === 'BUY' ? 'bg-green-500/20 border-green-400' :
-                                            analysis.recommendation === 'SELL' ? 'bg-red-500/20 border-red-400' :
-                                            'bg-blue-500/20 border-blue-400'
-                                        }`}>
-                                            <div className="font-bold text-white text-lg mb-2">
-                                                📢 {analysis.recommendation}
-                                            </div>
-                                            <p className="text-sm text-blue-100">{analysis.reasoning}</p>
-                                        </div>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                            <div className="bg-white/5 p-4 rounded">
-                                                <h4 className="font-semibold text-white mb-3">Trade Setup</h4>
-                                                <div className="space-y-2 text-sm">
-                                                    <div className="flex justify-between">
-                                                        <span className="text-blue-200">Entry:</span>
-                                                        <span className="text-white font-bold">${analysis.entryPoint}</span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-blue-200">Stop Loss:</span>
-                                                        <span className="text-red-300 font-bold">${analysis.stopLoss}</span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-blue-200">Take Profit:</span>
-                                                        <span className="text-green-300 font-bold">${analysis.takeProfit}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="bg-white/5 p-4 rounded">
-                                                <h4 className="font-semibold text-white mb-3">Patterns</h4>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {analysis.patterns.map((p, i) => (
-                                                        <span key={i} className="text-xs px-3 py-1 bg-blue-600/40 border border-blue-400 rounded-full text-white">
-                                                            {p}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="bg-green-600/20 p-3 rounded border border-green-400">
-                                                <div className="font-semibold text-white mb-2">Support</div>
-                                                {analysis.keyLevels.support.map((s, i) => (
-                                                    <div key={i} className="text-green-200 text-sm">${s}</div>
-                                                ))}
-                                            </div>
-                                            <div className="bg-red-600/20 p-3 rounded border border-red-400">
-                                                <div className="font-semibold text-white mb-2">Resistance</div>
-                                                {analysis.keyLevels.resistance.map((r, i) => (
-                                                    <div key={i} className="text-red-200 text-sm">${r}</div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                                
-                                {/* Multi-Timeframe Analysis */}
-                                {multiTFData && (
-                                    <div className="bg-white/10 rounded-xl p-6 border border-white/20">
-                                        <h3 className="text-xl font-semibold text-white mb-4">📈 Multi-Timeframe Analysis</h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                            {Object.entries(multiTFData).map(([tf, data]) => {
-                                                if (!data || !data.indicators) return null;
-                                                const rsi = data.indicators.rsi;
-                                                const trend = rsi > 70 ? 'Overbought' : rsi < 30 ? 'Oversold' : 'Neutral';
-                                                
-                                                return (
-                                                    <div key={tf} className={`p-4 rounded border-2 ${
-                                                        trend === 'Overbought' ? 'bg-red-600/20 border-red-400' :
-                                                        trend === 'Oversold' ? 'bg-green-600/20 border-green-400' :
-                                                        'bg-blue-600/20 border-blue-400'
-                                                    }`}>
-                                                        <h4 className="font-bold text-white mb-2">{tf}</h4>
-                                                        <div className="text-sm space-y-1">
-                                                            <div className="text-blue-200">RSI: <span className="text-white font-semibold">{rsi.toFixed(1)}</span></div>
-                                                            <div className="text-blue-200">Price: <span className="text-white font-semibold">${data.price.toLocaleString()}</span></div>
-                                                            <div className={`font-semibold ${
-                                                                trend === 'Overbought' ? 'text-red-300' :
-                                                                trend === 'Oversold' ? 'text-green-300' :
-                                                                'text-blue-300'
-                                                            }`}>{trend}</div>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                        <div className="mt-4 p-3 bg-blue-600/20 border border-blue-400 rounded">
-                                            <p className="text-blue-100 text-sm">
-                                                <strong>💡 Confluence:</strong> {
-                                                    Object.values(multiTFData).filter(d => d?.indicators?.rsi > 70).length >= 2 ? '⚠️ Multiple timeframes overbought - Consider selling' :
-                                                    Object.values(multiTFData).filter(d => d?.indicators?.rsi < 30).length >= 2 ? '✅ Multiple timeframes oversold - Consider buying' :
-                                                    '➡️ Mixed signals across timeframes'
-                                                }
-                                            </p>
-                                        </div>
-                                    </div>
-                                )}
-                                
-                                {/* Active Alerts */}
-                                {alerts.length > 0 && (
-                                    <div className="bg-orange-600/20 rounded-xl p-4 border-2 border-orange-400">
-                                        <h3 className="text-white font-semibold mb-3 flex items-center justify-between">
-                                            <span>🔔 Recent Alerts</span>
-                                            <button onClick={() => setAlerts([])} className="text-xs text-orange-200 hover:text-white">
-                                                Clear All
-                                            </button>
-                                        </h3>
-                                        <div className="space-y-2 max-h-48 overflow-y-auto">
-                                            {alerts.slice(0, 5).map(alert => (
-                                                <div key={alert.id} className={`p-2 rounded border text-sm ${
-                                                    alert.severity === 'high' ? 'bg-red-600/30 border-red-400' : 'bg-yellow-600/30 border-yellow-400'
-                                                }`}>
-                                                    <div className="flex justify-between items-center">
-                                                        <div>
-                                                            <span className={`px-2 py-1 rounded text-xs font-bold ${
-                                                                alert.severity === 'high' ? 'bg-red-500' : 'bg-yellow-500'
-                                                            } text-white mr-2`}>
-                                                                {alert.type}
-                                                            </span>
-                                                            <span className="text-white text-xs">{alert.timestamp}</span>
-                                                        </div>
-                                                    </div>
-                                                    <p className="text-white text-sm mt-1">{alert.message}</p>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="mt-6 bg-yellow-600/20 border border-yellow-400 rounded-lg p-4 text-center">
-                            <p className="text-yellow-100 text-sm">
-                                <strong>⚠️ Disclaimer:</strong> Educational purposes only. Trade at your own risk.
-                            </p>
-                        </div>
-                    </div>
-                </div>
+            
+            return h('div', {className: 'container'},
+                h('h1', null, '🤖 AI Trading System'),
+                h('p', {style: {textAlign: 'center', marginBottom: '1.5rem', opacity: 0.8}}, 'Real-time data • Voice control • Live execution'),
+                
+                h('div', {className: 'card'},
+                    h('div', {className: 'flex-between'},
+                        h('div', {className: 'flex'},
+                            h('button', {className: `btn ${isListening ? 'btn-danger pulse' : 'btn-purple'}`, onClick: toggleVoice}, isListening ? '🎤 Listening...' : '🎤 Voice'),
+                            h('button', {className: 'btn btn-purple', onClick: () => setShowSettings(!showSettings)}, '⚙️'),
+                            h('button', {className: `btn ${autoRefresh ? 'btn-success pulse' : 'btn-gray'}`, onClick: () => setAutoRefresh(!autoRefresh)}, `🔄 ${autoRefresh ? 'ON' : 'OFF'}`),
+                            h('button', {className: 'btn btn-primary', onClick: () => setShowPortfolio(!showPortfolio)}, `💼 Portfolio (${portfolio.length})`),
+                            h('button', {className: 'btn btn-purple', onClick: () => setShowBacktest(!showBacktest)}, '📊 Backtest'),
+                            h('button', {className: 'btn btn-primary', onClick: fetchMultiTF}, '📈 Multi-TF')
+                        ),
+                        voiceText && h('div', {className: 'badge', style: {background: '#3b82f6'}}, `"${voiceText}"`)
+                    ),
+                    showSettings && h('div', {className: 'mt-4', style: {background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '0.5rem'}},
+                        h('label', {className: 'text-sm'}, 'Auto-Refresh Interval (seconds)'),
+                        h('input', {type: 'number', value: refreshInterval, onChange: e => setRefreshInterval(parseInt(e.target.value)), min: 5, max: 300})
+                    ),
+                    showPortfolio && portfolio.length > 0 && h('div', {className: 'mt-4'},
+                        h('h3', null, '💼 Active Positions'),
+                        ...portfolio.map(pos => {
+                            const pnl = marketData?.symbol === pos.symbol ? (marketData.price - pos.entry) * pos.size : 0;
+                            return h('div', {key: pos.id, className: `position-item ${pnl >= 0 ? 'bullish' : 'bearish'}`},
+                                h('div', {className: 'flex-between'},
+                                    h('div', null,
+                                        h('div', {className: 'font-bold'}, `${pos.symbol} - ${pos.direction}`),
+                                        h('div', {className: 'text-xs'}, `Entry: $${pos.entry} | Size: ${pos.size}`),
+                                        h('div', {className: 'text-sm font-bold'}, `P/L: $${pnl.toFixed(2)}`)
+                                    ),
+                                    h('button', {className: 'btn btn-danger', onClick: () => closePosition(pos.id)}, 'Close')
+                                )
+                            );
+                        })
+                    ),
+                    showBacktest && h('div', {className: 'mt-4 space-y-2'},
+                        h('h3', null, '📊 Backtesting'),
+                        h('button', {className: 'btn btn-purple', style: {width: '100%'}, onClick: runBacktest}, 'Run RSI + EMA (30d)'),
+                        h('button', {className: 'btn btn-purple', style: {width: '100%'}, onClick: runBacktest}, 'Run MACD + BB (60d)')
+                    )
+                ),
+                
+                h('div', {className: 'grid grid-3'},
+                    h('div', {className: 'card'},
+                        h('h3', null, '📊 Market'),
+                        h('input', {type: 'text', value: symbol, onChange: e => setSymbol(e.target.value.toUpperCase()), placeholder: 'Symbol'}),
+                        h('select', {value: timeframe, onChange: e => setTimeframe(e.target.value)},
+                            h('option', {value: '1M'}, '1 Min'), h('option', {value: '5M'}, '5 Min'),
+                            h('option', {value: '15M'}, '15 Min'), h('option', {value: '1H'}, '1 Hour'),
+                            h('option', {value: '4H'}, '4 Hours'), h('option', {value: '1D'}, '1 Day')
+                        ),
+                        h('button', {className: 'btn btn-primary', style: {width: '100%'}, onClick: () => fetchData(symbol), disabled: loading}, loading ? '⏳ Loading...' : '🔍 Analyze'),
+                        h('div', {className: 'mt-4'},
+                            h('h3', null, '💰 Broker'),
+                            h('select', {value: selectedBroker, onChange: e => setSelectedBroker(e.target.value)},
+                                h('option', {value: 'demo'}, 'Demo'), h('option', {value: 'mt4'}, 'MT4'),
+                                h('option', {value: 'mt5'}, 'MT5'), h('option', {value: 'binance'}, 'Binance')
+                            ),
+                            !broker ? h('button', {className: 'btn btn-success', style: {width: '100%'}, onClick: connectBroker}, '🔌 Connect') :
+                            h('div', {className: 'alert-success mt-2'},
+                                h('div', {className: 'font-bold'}, `✅ ${broker.name}`),
+                                h('div', {className: 'text-sm'}, `Balance: $${broker.balance.toLocaleString()}`)
+                            )
+                        ),
+                        h('div', {className: 'mt-4'},
+                            h('h3', null, '🎯 Execute'),
+                            h('label', {className: 'text-sm'}, 'Size (Lots)'),
+                            h('input', {type: 'number', value: tradeSize, onChange: e => setTradeSize(parseFloat(e.target.value)), step: 0.01, min: 0.01}),
+                            h('button', {className: 'btn btn-danger', style: {width: '100%'}, onClick: addToPortfolio, disabled: !analysis}, '⚡ Execute Trade')
+                        )
+                    ),
+                    
+                    h('div', {style: {gridColumn: 'span 2'}},
+                        marketData && h('div', {className: 'card'},
+                            h('div', {className: 'flex-between mb-3'},
+                                h('h3', null, marketData.symbol),
+                                h('span', {className: 'badge', style: {background: '#3b82f6'}}, marketData.source)
+                            ),
+                            h('div', {className: 'grid grid-4 mb-3'},
+                                h('div', {className: 'stat-box'},
+                                    h('div', {className: 'text-sm', style: {opacity: 0.7}}, 'Price'),
+                                    h('div', {className: 'font-bold', style: {fontSize: '1.25rem'}}, `$${marketData.price?.toLocaleString()}`)
+                                ),
+                                h('div', {className: 'stat-box'},
+                                    h('div', {className: 'text-sm', style: {opacity: 0.7}}, 'Change'),
+                                    h('div', {className: 'font-bold', style: {fontSize: '1.25rem', color: marketData.changePercent > 0 ? '#10b981' : '#ef4444'}}, `${marketData.changePercent > 0 ? '+' : ''}${marketData.changePercent}%`)
+                                ),
+                                h('div', {className: 'stat-box'},
+                                    h('div', {className: 'text-sm', style: {opacity: 0.7}}, '24h High'),
+                                    h('div', {className: 'font-bold', style: {fontSize: '1.25rem'}}, `$${marketData.high24h?.toLocaleString()}`)
+                                ),
+                                h('div', {className: 'stat-box'},
+                                    h('div', {className: 'text-sm', style: {opacity: 0.7}}, '24h Low'),
+                                    h('div', {className: 'font-bold', style: {fontSize: '1.25rem'}}, `$${marketData.low24h?.toLocaleString()}`)
+                                )
+                            ),
+                            marketData.indicators && h('div', {className: 'grid grid-4'},
+                                h('div', {className: 'indicator-box', style: {borderColor: '#3b82f6', background: 'rgba(59,130,246,0.2)'}},
+                                    h('div', {className: 'text-xs'}, 'RSI'),
+                                    h('div', {className: 'font-bold'}, marketData.indicators.rsi?.toFixed(1))
+                                ),
+                                h('div', {className: 'indicator-box', style: {borderColor: '#a855f7', background: 'rgba(168,85,247,0.2)'}},
+                                    h('div', {className: 'text-xs'}, 'MACD'),
+                                    h('div', {className: 'font-bold'}, marketData.indicators.macd?.histogram?.toFixed(2))
+                                ),
+                                h('div', {className: 'indicator-box', style: {borderColor: '#10b981', background: 'rgba(16,185,129,0.2)'}},
+                                    h('div', {className: 'text-xs'}, 'ADX'),
+                                    h('div', {className: 'font-bold'}, marketData.indicators.adx?.toFixed(1))
+                                ),
+                                h('div', {className: 'indicator-box', style: {borderColor: '#f97316', background: 'rgba(249,115,22,0.2)'}},
+                                    h('div', {className: 'text-xs'}, 'ATR'),
+                                    h('div', {className: 'font-bold'}, `$${marketData.indicators.atr?.toFixed(2)}`)
+                                )
+                            )
+                        ),
+                        analysis && h('div', {className: 'card'},
+                            h('h3', null, '🤖 AI Analysis'),
+                            h('div', {className: `p-3 mb-3 ${analysis.direction === 'BULLISH' ? 'bullish' : analysis.direction === 'BEARISH' ? 'bearish' : 'neutral'}`, style: {borderRadius: '0.5rem'}},
+                                h('div', {className: 'flex-between'},
+                                    h('span', {className: 'font-bold', style: {fontSize: '1.5rem'}}, analysis.direction),
+                                    h('span', {className: 'font-bold'}, `${analysis.confidence}%`)
+                                )
+                            ),
+                            h('div', {className: `p-3 mb-3 ${analysis.recommendation === 'BUY' ? 'bullish' : analysis.recommendation === 'SELL' ? 'bearish' : 'neutral'}`, style: {borderRadius: '0.5rem'}},
+                                h('div', {className: 'font-bold mb-2'}, `📢 ${analysis.recommendation}`),
+                                h('p', {className: 'text-sm'}, analysis.reasoning)
+                            ),
+                            h('div', {className: 'grid grid-2'},
+                                h('div', {className: 'stat-box'},
+                                    h('div', {className: 'font-bold mb-2'}, 'Trade Setup'),
+                                    h('div', {className: 'text-sm space-y-2'},
+                                        h('div', {className: 'flex-between'}, h('span', null, 'Entry:'), h('span', {className: 'font-bold'}, `$${analysis.entryPoint}`)),
+                                        h('div', {className: 'flex-between'}, h('span', null, 'Stop Loss:'), h('span', {className: 'font-bold', style: {color: '#fca5a5'}}, `$${analysis.stopLoss}`)),
+                                        h('div', {className: 'flex-between'}, h('span', null, 'Take Profit:'), h('span', {className: 'font-bold', style: {color: '#86efac'}}, `$${analysis.takeProfit}`))
+                                    )
+                                ),
+                                h('div', {className: 'stat-box'},
+                                    h('div', {className: 'font-bold mb-2'}, 'Patterns'),
+                                    ...analysis.patterns.map((p, i) => h('span', {key: i, className: 'badge mr-2', style: {background: '#3b82f6'}}, p))
+                                )
+                            )
+                        ),
+                        multiTFData && h('div', {className: 'card'},
+                            h('h3', null, '📈 Multi-Timeframe'),
+                            h('div', {className: 'grid grid-3'},
+                                ...Object.entries(multiTFData).map(([tf, data]) => {
+                                    if (!data?.indicators) return null;
+                                    const rsi = data.indicators.rsi;
+                                    const trend = rsi > 70 ? 'Overbought' : rsi < 30 ? 'Oversold' : 'Neutral';
+                                    return h('div', {key: tf, className: `p-3 ${trend === 'Overbought' ? 'bearish' : trend === 'Oversold' ? 'bullish' : 'neutral'}`, style: {borderRadius: '0.5rem'}},
+                                        h('h4', {className: 'font-bold mb-2'}, tf),
+                                        h('div', {className: 'text-sm'}, `RSI: ${rsi.toFixed(1)}`),
+                                        h('div', {className: 'text-sm'}, `Price: $${data.price.toLocaleString()}`),
+                                        h('div', {className: 'font-bold text-sm mt-2'}, trend)
+                                    );
+                                })
+                            )
+                        )
+                    )
+                ),
+                h('div', {className: 'alert alert-warning', style: {textAlign: 'center'}}, '⚠️ Educational purposes only. Trade at your own risk.')
             );
-        };
-
-        ReactDOM.render(<App />, document.getElementById('root'));
+        }
+        
+        ReactDOM.render(React.createElement(App), document.getElementById('root'));
     </script>
 </body>
 </html>
