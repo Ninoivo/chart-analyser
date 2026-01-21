@@ -3,1195 +3,438 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Trading System</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>AI Trading System Pro</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 50%,#0f172a 100%);min-height:100vh;color:#fff}
+        .container{max-width:1600px;margin:0 auto;padding:1rem}
+        .btn{padding:0.75rem 1.5rem;border-radius:0.5rem;border:none;font-weight:600;cursor:pointer;transition:all 0.2s;font-size:0.875rem}
+        .btn:disabled{opacity:0.5;cursor:not-allowed}
+        .btn-primary{background:linear-gradient(135deg,#3b82f6,#06b6d4);color:#fff}
+        .btn-success{background:linear-gradient(135deg,#10b981,#059669);color:#fff}
+        .btn-danger{background:linear-gradient(135deg,#f97316,#dc2626);color:#fff}
+        .btn-purple{background:#9333ea;color:#fff}
+        .btn-gray{background:#4b5563;color:#fff}
+        .btn-yellow{background:#eab308;color:#fff}
+        .btn-green{background:#16a34a;color:#fff}
+        .btn-indigo{background:#6366f1;color:#fff}
+        .card{background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);border-radius:1rem;padding:1.5rem;border:1px solid rgba(255,255,255,0.2);margin-bottom:1.5rem}
+        .grid{display:grid;gap:1.5rem}
+        .grid-3{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+        .grid-2{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+        .grid-4{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+        input,select{width:100%;padding:0.75rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.2);border-radius:0.5rem;color:#fff;margin-bottom:0.5rem}
+        input::placeholder{color:rgba(255,255,255,0.5)}
+        .stat-box{background:rgba(255,255,255,0.05);padding:1rem;border-radius:0.5rem;text-align:center}
+        .indicator-box{padding:0.75rem;border-radius:0.5rem;border:2px solid}
+        .bullish{background:rgba(16,185,129,0.2);border-color:#10b981}
+        .bearish{background:rgba(239,68,68,0.2);border-color:#ef4444}
+        .neutral{background:rgba(59,130,246,0.2);border-color:#3b82f6}
+        .pulse{animation:pulse 2s infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+        .flex{display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center}
+        .flex-between{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+        .text-sm{font-size:0.875rem}
+        .text-xs{font-size:0.75rem}
+        .font-bold{font-weight:700}
+        .mb-2{margin-bottom:0.5rem}
+        .mb-3{margin-bottom:0.75rem}
+        .mb-4{margin-bottom:1rem}
+        .mt-2{margin-top:0.5rem}
+        .mt-3{margin-top:0.75rem}
+        .mt-4{margin-top:1rem}
+        .p-2{padding:0.5rem}
+        .p-3{padding:0.75rem}
+        .badge{display:inline-block;padding:0.25rem 0.75rem;border-radius:9999px;font-size:0.75rem;font-weight:600}
+        .overflow-auto{overflow-y:auto;max-height:400px}
+        h1{font-size:2rem;text-align:center;margin-bottom:0.5rem}
+        h2{font-size:1.5rem;margin-bottom:1rem}
+        h3{font-size:1.25rem;margin-bottom:0.75rem}
+        .alert{padding:0.75rem;border-radius:0.5rem;margin-bottom:1rem;border:2px solid}
+        .position-item{padding:0.75rem;border-radius:0.5rem;border:2px solid;margin-bottom:0.5rem}
+        .space-y-2>*+*{margin-top:0.5rem}
+        .mover-item{padding:0.75rem;border-radius:0.5rem;border:2px solid}
+        .order-item{padding:0.5rem;border-radius:0.25rem;display:flex;justify-content:space-between;font-family:monospace;font-size:0.875rem}
+    </style>
 </head>
 <body>
     <div id="root"></div>
-    <script type="text/babel">
-        const { useState, useRef, useEffect } = React;
-
-        const App = () => {
-            const [marketData, setMarketData] = useState(null);
-            const [analysis, setAnalysis] = useState(null);
-            const [loading, setLoading] = useState(false);
-            const [symbol, setSymbol] = useState('BTCUSD');
-            const [timeframe, setTimeframe] = useState('1H');
-            const [isListening, setIsListening] = useState(false);
-            const [voiceText, setVoiceText] = useState('');
-            const [apiKeys, setApiKeys] = useState({
-                alphavantage: localStorage.getItem('alphavantage_key') || '',
-                twelvedata: localStorage.getItem('twelvedata_key') || '',
-                fixer: localStorage.getItem('fixer_key') || ''
-            });
-            const [showSettings, setShowSettings] = useState(false);
-            const [broker, setBroker] = useState(null);
-            const [selectedBroker, setSelectedBroker] = useState('demo');
-            const [tradeSize, setTradeSize] = useState(1);
-            const [alerts, setAlerts] = useState([]);
-            const [alertsOn, setAlertsOn] = useState(true);
-            const [priceAlerts, setPriceAlerts] = useState([]);
-            const [autoRefresh, setAutoRefresh] = useState(false);
-            const [refreshInterval, setRefreshInterval] = useState(30);
-            const [portfolio, setPortfolio] = useState([]);
-            const [trades, setTrades] = useState([]);
-            const [showBacktest, setShowBacktest] = useState(false);
-            const [showPortfolio, setShowPortfolio] = useState(false);
-            const [showMultiTimeframe, setShowMultiTimeframe] = useState(false);
-            const [multiTFData, setMultiTFData] = useState(null);
-            const [news, setNews] = useState([]);
-            const [whaleAlerts, setWhaleAlerts] = useState([]);
-            const [marketMovers, setMarketMovers] = useState(null);
-            const [orderBook, setOrderBook] = useState(null);
-            const [showMarketMovers, setShowMarketMovers] = useState(false);
-            const [showOrderBook, setShowOrderBook] = useState(false);
-            const recognitionRef = useRef(null);
-            const autoRefreshRef = useRef(null);
-
-            useEffect(() => {
-                // Load saved data
-                const savedPortfolio = localStorage.getItem('portfolio');
-                const savedTrades = localStorage.getItem('trades');
-                const savedAlerts = localStorage.getItem('priceAlerts');
+    <script>
+    (function(){
+        const {useState,useEffect,useRef,createElement:h}=React;
+        
+        function App(){
+            const [data,setData]=useState(null);
+            const [analysis,setAnalysis]=useState(null);
+            const [loading,setLoading]=useState(false);
+            const [symbol,setSymbol]=useState('BTCUSD');
+            const [timeframe,setTimeframe]=useState('1H');
+            const [listening,setListening]=useState(false);
+            const [voiceText,setVoiceText]=useState('');
+            const [broker,setBroker]=useState(null);
+            const [selectedBroker,setSelectedBroker]=useState('demo');
+            const [size,setSize]=useState(1);
+            const [portfolio,setPortfolio]=useState([]);
+            const [movers,setMovers]=useState(null);
+            const [orderBook,setOrderBook]=useState(null);
+            const [showMovers,setShowMovers]=useState(false);
+            const [showDepth,setShowDepth]=useState(false);
+            const [autoRefresh,setAutoRefresh]=useState(false);
+            const recog=useRef(null);
+            
+            useEffect(()=>{
+                const saved=localStorage.getItem('portfolio');
+                if(saved)setPortfolio(JSON.parse(saved));
                 
-                if (savedPortfolio) setPortfolio(JSON.parse(savedPortfolio));
-                if (savedTrades) setTrades(JSON.parse(savedTrades));
-                if (savedAlerts) setPriceAlerts(JSON.parse(savedAlerts));
-
-                if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                    const recognition = new SpeechRecognition();
-                    recognition.continuous = false;
-                    recognition.interimResults = false;
-                    
-                    recognition.onresult = (e) => {
-                        const text = e.results[0][0].transcript;
-                        setVoiceText(text);
-                        processVoice(text);
+                if('webkitSpeechRecognition' in window){
+                    const r=new webkitSpeechRecognition();
+                    r.continuous=false;
+                    r.onresult=e=>{
+                        const t=e.results[0][0].transcript;
+                        setVoiceText(t);
+                        processVoice(t);
                     };
-                    
-                    recognition.onerror = (e) => {
-                        console.error('Speech error:', e.error);
-                        setIsListening(false);
-                        if (e.error !== 'no-speech') {
-                            speak('Sorry, I had trouble hearing that');
-                        }
-                    };
-                    
-                    recognition.onend = () => setIsListening(false);
-                    recognitionRef.current = recognition;
+                    r.onend=()=>setListening(false);
+                    recog.current=r;
                 }
-            }, []);
-
-            const speak = (text) => {
-                if ('speechSynthesis' in window) {
-                    window.speechSynthesis.cancel();
-                    const utterance = new SpeechSynthesisUtterance(text);
-                    utterance.rate = 1.0;
-                    utterance.pitch = 1.0;
-                    utterance.volume = 1.0;
-                    window.speechSynthesis.speak(utterance);
+            },[]);
+            
+            useEffect(()=>{
+                if(autoRefresh&&symbol){
+                    const iv=setInterval(()=>fetchData(symbol),30000);
+                    return()=>clearInterval(iv);
+                }
+            },[autoRefresh,symbol]);
+            
+            const speak=t=>{
+                if('speechSynthesis' in window){
+                    speechSynthesis.cancel();
+                    const u=new SpeechSynthesisUtterance(t);
+                    speechSynthesis.speak(u);
                 }
             };
-
-            const toggleVoice = () => {
-                if (!recognitionRef.current) {
-                    alert('Voice recognition not supported. Use Chrome or Edge browser.');
+            
+            const toggleVoice=()=>{
+                if(!recog.current)return alert('Voice not supported');
+                if(listening){
+                    recog.current.stop();
+                }else{
+                    recog.current.start();
+                    setListening(true);
+                    speak('Listening');
+                }
+            };
+            
+            const processVoice=text=>{
+                const l=text.toLowerCase();
+                let s='BTCUSD';
+                if(l.includes('bitcoin')||l.includes('btc'))s='BTCUSD';
+                else if(l.includes('ethereum')||l.includes('eth'))s='ETHUSD';
+                else if(l.includes('euro'))s='EURUSD';
+                else if(l.includes('gold'))s='XAUUSD';
+                else if(l.includes('ripple')||l.includes('xrp'))s='XRPUSD';
+                else if(l.includes('solana')||l.includes('sol'))s='SOLUSD';
+                else if(l.includes('apple'))s='AAPL';
+                else if(l.includes('tesla'))s='TSLA';
+                
+                if(l.includes('movers')||l.includes('gainers')){
+                    setShowMovers(true);
+                    fetchMovers();
+                    speak('Loading movers');
                     return;
                 }
-
-                if (isListening) {
-                    recognitionRef.current.stop();
-                    setIsListening(false);
-                } else {
-                    try {
-                        recognitionRef.current.start();
-                        setIsListening(true);
-                        speak('Listening for command');
-                    } catch (err) {
-                        console.error('Start error:', err);
-                        speak('Could not start voice recognition');
-                    }
-                }
-            };
-
-            const processVoice = (text) => {
-                const lower = text.toLowerCase();
-                let sym = symbol;
-                
-                // Improved symbol detection
-                if (lower.includes('bitcoin') || lower.includes('btc')) {
-                    sym = 'BTCUSD';
-                } else if (lower.includes('ethereum') || lower.includes('eth')) {
-                    sym = 'ETHUSD';
-                } else if (lower.includes('euro') || lower.includes('eur')) {
-                    sym = 'EURUSD';
-                } else if (lower.includes('gold') || lower.includes('xau')) {
-                    sym = 'XAUUSD';
-                } else if (lower.includes('pound') || lower.includes('gbp')) {
-                    sym = 'GBPUSD';
-                } else if (lower.includes('yen') || lower.includes('jpy')) {
-                    sym = 'USDJPY';
-                } else if (lower.includes('ripple') || lower.includes('xrp')) {
-                    sym = 'XRPUSD';
-                } else if (lower.includes('cardano') || lower.includes('ada')) {
-                    sym = 'ADAUSD';
-                } else if (lower.includes('solana') || lower.includes('sol')) {
-                    sym = 'SOLUSD';
-                } else if (lower.includes('apple')) {
-                    sym = 'AAPL';
-                } else if (lower.includes('tesla')) {
-                    sym = 'TSLA';
-                } else if (lower.includes('amazon')) {
-                    sym = 'AMZN';
-                }
-                
-                // Handle special commands
-                if (lower.includes('movers') || lower.includes('gainers')) {
-                    setShowMarketMovers(true);
-                    fetchMarketMovers();
-                    speak('Loading market movers');
+                if(l.includes('depth')||l.includes('order book')){
+                    setShowDepth(true);
+                    fetchDepth(s);
+                    speak('Loading depth');
                     return;
                 }
                 
-                if (lower.includes('order book') || lower.includes('depth')) {
-                    setShowOrderBook(true);
-                    fetchOrderBook(sym);
-                    speak('Loading order book');
-                    return;
-                }
-                
-                setSymbol(sym);
-                speak(`Analyzing ${sym}`);
-                fetchData(sym);
+                setSymbol(s);
+                speak('Analyzing '+s);
+                fetchData(s);
             };
-
-            const fetchData = async (sym) => {
+            
+            const fetchData=async s=>{
                 setLoading(true);
-                try {
-                    const endpoint = window.location.hostname === 'localhost' 
-                        ? 'http://localhost:8888/.netlify/functions/market-data'
-                        : '/.netlify/functions/market-data';
-                    
-                    const res = await fetch(endpoint, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({
-                            symbol: sym, 
-                            timeframe: timeframe, 
-                            apiKeys: apiKeys
-                        })
+                try{
+                    const r=await fetch('/.netlify/functions/market-data',{
+                        method:'POST',
+                        headers:{'Content-Type':'application/json'},
+                        body:JSON.stringify({symbol:s,timeframe,apiKeys:{}})
                     });
-                    
-                    if (!res.ok) throw new Error('API error');
-                    
-                    const data = await res.json();
-                    setMarketData(data);
-                    analyzeData(data);
-                    speak(`Data loaded for ${sym}. Price is ${data.price}`);
-                } catch (err) {
-                    console.error('Fetch error:', err);
-                    speak('Failed to fetch data. Using demo mode.');
-                    const demoData = getDemoData(sym);
-                    setMarketData(demoData);
-                    analyzeData(demoData);
-                } finally {
+                    const d=await r.json();
+                    setData(d);
+                    analyze(d);
+                    speak('Data loaded');
+                }catch(e){
+                    const demo=getDemo(s);
+                    setData(demo);
+                    analyze(demo);
+                }finally{
                     setLoading(false);
                 }
             };
-
-            const getDemoData = (sym) => {
-                const basePrice = sym.includes('BTC') ? 43250 : 
-                                 sym.includes('ETH') ? 2280 :
-                                 sym.includes('XAU') ? 2042 :
-                                 sym.includes('EUR') ? 1.0856 : 1.2734;
-                
-                return {
-                    symbol: sym,
-                    source: 'Demo Mode',
-                    price: basePrice,
-                    change: basePrice * 0.012,
-                    changePercent: 1.2,
-                    volume: 1250000000,
-                    high24h: basePrice * 1.015,
-                    low24h: basePrice * 0.985,
-                    indicators: {
-                        rsi: 55 + Math.random() * 20,
-                        macd: { value: 125.5, signal: 118.2, histogram: 7.3 },
-                        ema20: basePrice * 0.995,
-                        ema50: basePrice * 0.985,
-                        atr: basePrice * 0.02,
-                        adx: 28.5
-                    },
-                    patterns: ['Uptrend', 'Consolidation'],
-                    supportResistance: {
-                        support: [basePrice * 0.97, basePrice * 0.94],
-                        resistance: [basePrice * 1.03, basePrice * 1.06]
-                    },
-                    note: 'Demo data - Add API key for real data'
+            
+            const getDemo=s=>{
+                const p=s.includes('BTC')?43250:s.includes('ETH')?2280:1.0856;
+                return{
+                    symbol:s,source:'Demo',price:p,changePercent:1.2,
+                    high24h:p*1.015,low24h:p*0.985,
+                    indicators:{rsi:55,macd:{histogram:7.3},ema20:p*0.995,adx:28.5,atr:p*0.02},
+                    patterns:['Uptrend'],supportResistance:{support:[p*0.97],resistance:[p*1.03]}
                 };
             };
-
-            const analyzeData = (data) => {
-                if (!data.indicators) return;
-                const rsi = data.indicators.rsi;
-                const price = data.price;
-                const ema20 = data.indicators.ema20;
-                
-                let dir = 'NEUTRAL', conf = 50, rec = 'HOLD';
-                
-                if (rsi < 30 && price > ema20) {
-                    dir = 'BULLISH';
-                    rec = 'BUY';
-                    conf = 75;
-                } else if (rsi > 70 && price < ema20) {
-                    dir = 'BEARISH';
-                    rec = 'SELL';
-                    conf = 75;
-                } else if (price > ema20) {
-                    dir = 'BULLISH';
-                    rec = 'BUY';
-                    conf = 60;
-                }
-                
-                const result = {
-                    direction: dir,
-                    confidence: conf,
-                    recommendation: rec,
-                    entryPoint: price.toFixed(2),
-                    stopLoss: (price * 0.98).toFixed(2),
-                    takeProfit: (price * 1.05).toFixed(2),
-                    reasoning: `RSI: ${rsi.toFixed(1)}, Price ${price > ema20 ? 'above' : 'below'} EMA20`,
-                    patterns: data.patterns || [],
-                    keyLevels: data.supportResistance || {support: [], resistance: []}
-                };
-                
-                setAnalysis(result);
-                speak(`Analysis complete. ${dir}. Recommendation: ${rec} with ${conf} percent confidence`);
-            };
-
-            const connectBroker = () => {
-                speak(`Connecting to ${selectedBroker}`);
-                setTimeout(() => {
-                    setBroker({
-                        name: selectedBroker,
-                        balance: 50000,
-                        equity: 50250,
-                        freeMargin: 45250
-                    });
-                    speak('Connected successfully');
-                }, 1500);
-            };
-
-            // Auto-refresh effect
-            useEffect(() => {
-                if (autoRefresh && symbol) {
-                    autoRefreshRef.current = setInterval(() => {
-                        fetchData(symbol);
-                        checkPriceAlerts();
-                    }, refreshInterval * 1000);
-                    
-                    return () => {
-                        if (autoRefreshRef.current) {
-                            clearInterval(autoRefreshRef.current);
-                        }
-                    };
-                }
-            }, [autoRefresh, refreshInterval, symbol]);
-
-            const checkPriceAlerts = () => {
-                if (!marketData || priceAlerts.length === 0) return;
-                
-                priceAlerts.forEach(alert => {
-                    if (alert.symbol === symbol) {
-                        const triggered = (alert.condition === 'above' && marketData.price >= alert.price) ||
-                                        (alert.condition === 'below' && marketData.price <= alert.price);
-                        
-                        if (triggered && !alert.triggered) {
-                            speak(`Price alert! ${symbol} is ${alert.condition} ${alert.price}`);
-                            
-                            setAlerts(prev => [{
-                                id: Date.now(),
-                                type: 'PRICE_ALERT',
-                                message: `${symbol} hit ${alert.price}!`,
-                                severity: 'high',
-                                timestamp: new Date().toLocaleTimeString()
-                            }, ...prev]);
-                            
-                            // Mark as triggered
-                            setPriceAlerts(prev => prev.map(a => 
-                                a.id === alert.id ? {...a, triggered: true} : a
-                            ));
-                        }
-                    }
+            
+            const analyze=d=>{
+                if(!d.indicators)return;
+                const rsi=d.indicators.rsi;
+                const p=d.price;
+                let dir='NEUTRAL',conf=50,rec='HOLD';
+                if(rsi<30){dir='BULLISH';rec='BUY';conf=75}
+                else if(rsi>70){dir='BEARISH';rec='SELL';conf=75}
+                setAnalysis({
+                    direction:dir,confidence:conf,recommendation:rec,
+                    entryPoint:p.toFixed(2),stopLoss:(p*0.98).toFixed(2),
+                    takeProfit:(p*1.05).toFixed(2),reasoning:'RSI: '+rsi.toFixed(1),
+                    patterns:d.patterns||[],keyLevels:d.supportResistance||{}
                 });
             };
-
-            const addPriceAlert = (price, condition) => {
-                const newAlert = {
-                    id: Date.now(),
-                    symbol: symbol,
-                    price: parseFloat(price),
-                    condition: condition,
-                    triggered: false,
-                    created: new Date().toISOString()
+            
+            const connect=()=>{
+                speak('Connecting');
+                setTimeout(()=>{
+                    setBroker({name:selectedBroker,balance:50000,equity:50250});
+                    speak('Connected');
+                },1500);
+            };
+            
+            const addPos=()=>{
+                if(!analysis)return alert('Analyze first');
+                const pos={
+                    id:Date.now(),symbol,entry:parseFloat(analysis.entryPoint),
+                    size,direction:analysis.recommendation
                 };
-                
-                const updated = [...priceAlerts, newAlert];
-                setPriceAlerts(updated);
-                localStorage.setItem('priceAlerts', JSON.stringify(updated));
-                speak(`Alert set for ${symbol} ${condition} ${price}`);
+                const u=[...portfolio,pos];
+                setPortfolio(u);
+                localStorage.setItem('portfolio',JSON.stringify(u));
+                speak('Added');
             };
-
-            const fetchMarketMovers = async () => {
-                try {
-                    const endpoint = window.location.hostname === 'localhost' 
-                        ? 'http://localhost:8888/.netlify/functions/market-movers'
-                        : '/.netlify/functions/market-movers';
-                    
-                    const res = await fetch(endpoint);
-                    const data = await res.json();
-                    setMarketMovers(data);
-                    speak(`Market movers loaded. ${data.marketStats.bullishCount} coins up, ${data.marketStats.bearishCount} down`);
-                } catch (err) {
-                    console.error('Market movers error:', err);
-                    speak('Failed to load market movers');
+            
+            const closePos=id=>{
+                const p=portfolio.find(p=>p.id===id);
+                if(!p)return;
+                const cur=data?.price||p.entry;
+                const pnl=p.direction==='BUY'?(cur-p.entry)*p.size:(p.entry-cur)*p.size;
+                setPortfolio(portfolio.filter(p=>p.id!==id));
+                speak('Closed. '+(pnl>0?'Profit':'Loss')+' '+Math.abs(pnl).toFixed(2));
+            };
+            
+            const fetchMovers=async()=>{
+                try{
+                    const r=await fetch('/.netlify/functions/market-movers');
+                    const d=await r.json();
+                    setMovers(d);
+                    speak('Movers loaded');
+                }catch(e){
+                    speak('Failed');
                 }
             };
-
-            const fetchOrderBook = async (sym) => {
-                try {
-                    const binanceSymbol = sym.replace('USD', 'USDT').replace('/', '');
-                    const url = `https://api.binance.com/api/v3/depth?symbol=${binanceSymbol}&limit=20`;
-                    const res = await fetch(url);
-                    const data = await res.json();
-                    
-                    const bids = data.bids.slice(0, 10).map(([price, qty]) => ({
-                        price: parseFloat(price),
-                        quantity: parseFloat(qty),
-                        total: parseFloat(price) * parseFloat(qty)
-                    }));
-                    
-                    const asks = data.asks.slice(0, 10).map(([price, qty]) => ({
-                        price: parseFloat(price),
-                        quantity: parseFloat(qty),
-                        total: parseFloat(price) * parseFloat(qty)
-                    }));
-                    
-                    const totalBids = bids.reduce((sum, b) => sum + b.quantity, 0);
-                    const totalAsks = asks.reduce((sum, a) => sum + a.quantity, 0);
-                    const buyPressure = (totalBids / (totalBids + totalAsks) * 100).toFixed(1);
-                    
-                    setOrderBook({
-                        symbol: sym,
-                        bids: bids,
-                        asks: asks,
-                        buyPressure: parseFloat(buyPressure),
-                        sellPressure: (100 - parseFloat(buyPressure)).toFixed(1),
-                        spread: (asks[0].price - bids[0].price).toFixed(2)
-                    });
-                    
-                    speak(`Order book loaded. Buy pressure ${buyPressure} percent`);
-                } catch (err) {
-                    console.error('Order book error:', err);
-                    speak('Failed to load order book');
+            
+            const fetchDepth=async s=>{
+                try{
+                    const bs=s.replace('USD','USDT').replace('/','');
+                    const r=await fetch('https://api.binance.com/api/v3/depth?symbol='+bs+'&limit=10');
+                    const d=await r.json();
+                    const bids=d.bids.map(([p,q])=>({price:parseFloat(p),qty:parseFloat(q)}));
+                    const asks=d.asks.map(([p,q])=>({price:parseFloat(p),qty:parseFloat(q)}));
+                    const tb=bids.reduce((s,b)=>s+b.qty,0);
+                    const ta=asks.reduce((s,a)=>s+a.qty,0);
+                    const bp=(tb/(tb+ta)*100).toFixed(1);
+                    setOrderBook({symbol:s,bids,asks,buyPressure:parseFloat(bp),sellPressure:(100-bp).toFixed(1)});
+                    speak('Depth loaded. Buy pressure '+bp+' percent');
+                }catch(e){
+                    speak('Failed');
                 }
             };
-                setLoading(true);
-                const timeframes = ['1H', '4H', '1D'];
-                const results = {};
+            
+            return h('div',{className:'container'},
+                h('h1',null,'🤖 AI Trading System Pro'),
+                h('p',{style:{textAlign:'center',marginBottom:'1.5rem',opacity:0.8}},'Real-time • Voice • Movers • Depth'),
                 
-                for (const tf of timeframes) {
-                    try {
-                        const endpoint = window.location.hostname === 'localhost' 
-                            ? 'http://localhost:8888/.netlify/functions/market-data'
-                            : '/.netlify/functions/market-data';
-                        
-                        const res = await fetch(endpoint, {
-                            method: 'POST',
-                            headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify({
-                                symbol: symbol, 
-                                timeframe: tf, 
-                                apiKeys: apiKeys
+                h('div',{className:'card'},
+                    h('div',{className:'flex',style:{justifyContent:'space-between',flexWrap:'wrap'}},
+                        h('div',{className:'flex'},
+                            h('button',{className:'btn '+(listening?'btn-danger pulse':'btn-purple'),onClick:toggleVoice},listening?'🎤 Stop':'🎤 Voice'),
+                            h('button',{className:'btn '+(autoRefresh?'btn-success pulse':'btn-gray'),onClick:()=>setAutoRefresh(!autoRefresh)},'🔄 '+(autoRefresh?'ON':'OFF')),
+                            h('button',{className:'btn btn-primary',onClick:()=>setShowMovers(!showMovers)},'🔥 Movers'),
+                            h('button',{className:'btn btn-yellow',onClick:()=>setShowDepth(!showDepth)},'📊 Depth'),
+                            h('button',{className:'btn btn-indigo',onClick:()=>alert('Portfolio: '+portfolio.length+' positions')},'💼 ('+portfolio.length+')')
+                        ),
+                        voiceText&&h('div',{className:'badge',style:{background:'#3b82f6'}},'"'+voiceText+'"')
+                    ),
+                    listening&&h('div',{className:'mt-3',style:{background:'rgba(147,51,234,0.2)',border:'2px solid #9333ea',borderRadius:'0.5rem',padding:'0.75rem'}},
+                        h('p',{className:'text-sm',style:{color:'#e9d5ff',marginBottom:'0.5rem'}},'💡 Say: "Bitcoin", "Show movers", "Order book", "Tesla"')
+                    )
+                ),
+                
+                h('div',{className:'grid grid-3'},
+                    h('div',{className:'card'},
+                        h('h3',null,'📊 Market'),
+                        h('input',{type:'text',value:symbol,onChange:e=>setSymbol(e.target.value.toUpperCase())}),
+                        h('select',{value:timeframe,onChange:e=>setTimeframe(e.target.value)},
+                            ['1M','5M','15M','1H','4H','1D'].map(t=>h('option',{key:t,value:t},t))
+                        ),
+                        h('button',{className:'btn btn-primary',style:{width:'100%'},onClick:()=>fetchData(symbol),disabled:loading},loading?'⏳':'🔍 Analyze'),
+                        h('div',{className:'mt-4'},
+                            h('h3',null,'💰 Broker'),
+                            h('select',{value:selectedBroker,onChange:e=>setSelectedBroker(e.target.value)},
+                                ['demo','mt4','mt5','binance'].map(b=>h('option',{key:b,value:b},b.toUpperCase()))
+                            ),
+                            !broker?h('button',{className:'btn btn-success',style:{width:'100%'},onClick:connect},'🔌 Connect'):
+                            h('div',{className:'alert bullish'},
+                                h('div',{className:'font-bold'},'✅ '+broker.name),
+                                h('div',{className:'text-sm'},'Balance: $'+broker.balance.toLocaleString())
+                            )
+                        ),
+                        h('div',{className:'mt-4'},
+                            h('h3',null,'🎯 Execute'),
+                            h('input',{type:'number',value:size,onChange:e=>setSize(parseFloat(e.target.value)),step:0.01,min:0.01,placeholder:'Lots'}),
+                            h('button',{className:'btn btn-danger',style:{width:'100%'},onClick:addPos,disabled:!analysis},'⚡ Trade')
+                        )
+                    ),
+                    
+                    h('div',{style:{gridColumn:'span 2'}},
+                        data&&h('div',{className:'card'},
+                            h('div',{className:'flex-between mb-3'},
+                                h('h3',null,data.symbol),
+                                h('span',{className:'badge',style:{background:'#3b82f6'}},data.source)
+                            ),
+                            h('div',{className:'grid grid-4 mb-3'},
+                                [
+                                    ['Price','$'+(data.price?.toLocaleString()||'N/A')],
+                                    ['Change',(data.changePercent>0?'+':'')+data.changePercent+'%'],
+                                    ['High','$'+(data.high24h?.toLocaleString()||'N/A')],
+                                    ['Low','$'+(data.low24h?.toLocaleString()||'N/A')]
+                                ].map(([l,v],i)=>h('div',{key:i,className:'stat-box'},
+                                    h('div',{className:'text-sm',style:{opacity:0.7}},l),
+                                    h('div',{className:'font-bold',style:{fontSize:'1.25rem',color:l==='Change'&&data.changePercent>0?'#10b981':l==='Change'?'#ef4444':'#fff'}},v)
+                                ))
+                            ),
+                            data.indicators&&h('div',{className:'grid grid-4'},
+                                [
+                                    ['RSI',data.indicators.rsi?.toFixed(1),'#3b82f6'],
+                                    ['MACD',data.indicators.macd?.histogram?.toFixed(2),'#a855f7'],
+                                    ['ADX',data.indicators.adx?.toFixed(1),'#10b981'],
+                                    ['ATR','$'+data.indicators.atr?.toFixed(2),'#f97316']
+                                ].map(([l,v,c],i)=>h('div',{key:i,className:'indicator-box',style:{borderColor:c,background:c+'33'}},
+                                    h('div',{className:'text-xs'},l),
+                                    h('div',{className:'font-bold'},v)
+                                ))
+                            )
+                        ),
+                        analysis&&h('div',{className:'card'},
+                            h('h3',null,'🤖 Analysis'),
+                            h('div',{className:'p-3 mb-3 '+(analysis.direction==='BULLISH'?'bullish':analysis.direction==='BEARISH'?'bearish':'neutral'),style:{borderRadius:'0.5rem'}},
+                                h('div',{className:'flex-between'},
+                                    h('span',{className:'font-bold',style:{fontSize:'1.5rem'}},analysis.direction),
+                                    h('span',{className:'font-bold'},analysis.confidence+'%')
+                                )
+                            ),
+                            h('div',{className:'p-3 '+(analysis.recommendation==='BUY'?'bullish':analysis.recommendation==='SELL'?'bearish':'neutral')},
+                                h('div',{className:'font-bold mb-2'},'📢 '+analysis.recommendation),
+                                h('p',{className:'text-sm'},analysis.reasoning)
+                            )
+                        ),
+                        showMovers&&movers&&h('div',{className:'card'},
+                            h('h3',null,'🔥 Market Movers'),
+                            h('div',{className:'grid grid-2'},
+                                h('div',null,
+                                    h('h4',{style:{color:'#86efac',marginBottom:'0.5rem'}},'📈 Gainers'),
+                                    h('div',{className:'overflow-auto'},
+                                        movers.gainers.slice(0,5).map((c,i)=>h('div',{key:i,className:'mover-item bullish mb-2'},
+                                            h('div',{className:'flex-between'},
+                                                h('div',null,
+                                                    h('div',{className:'font-bold text-sm'},c.symbol),
+                                                    h('div',{className:'text-xs'},'$'+c.price.toLocaleString())
+                                                ),
+                                                h('div',{className:'font-bold',style:{color:'#86efac'}},'+'+c.changePercent.toFixed(2)+'%')
+                                            )
+                                        ))
+                                    )
+                                ),
+                                h('div',null,
+                                    h('h4',{style:{color:'#fca5a5',marginBottom:'0.5rem'}},'📉 Losers'),
+                                    h('div',{className:'overflow-auto'},
+                                        movers.losers.slice(0,5).map((c,i)=>h('div',{key:i,className:'mover-item bearish mb-2'},
+                                            h('div',{className:'flex-between'},
+                                                h('div',null,
+                                                    h('div',{className:'font-bold text-sm'},c.symbol),
+                                                    h('div',{className:'text-xs'},'$'+c.price.toLocaleString())
+                                                ),
+                                                h('div',{className:'font-bold',style:{color:'#fca5a5'}},c.changePercent.toFixed(2)+'%')
+                                            )
+                                        ))
+                                    )
+                                )
+                            )
+                        ),
+                        showDepth&&orderBook&&h('div',{className:'card'},
+                            h('h3',null,'📊 Order Book - '+orderBook.symbol),
+                            h('div',{className:'grid grid-2 mb-3'},
+                                h('div',{className:'p-3 bullish',style:{textAlign:'center'}},
+                                    h('div',{className:'text-sm'},'Buy Pressure'),
+                                    h('div',{className:'font-bold',style:{fontSize:'2rem'}},orderBook.buyPressure+'%')
+                                ),
+                                h('div',{className:'p-3 bearish',style:{textAlign:'center'}},
+                                    h('div',{className:'text-sm'},'Sell Pressure'),
+                                    h('div',{className:'font-bold',style:{fontSize:'2rem'}},orderBook.sellPressure+'%')
+                                )
+                            ),
+                            h('div',{className:'grid grid-2'},
+                                h('div',null,
+                                    h('h4',{style:{color:'#86efac',marginBottom:'0.5rem'}},'Bids'),
+                                    orderBook.bids.map((b,i)=>h('div',{key:i,className:'order-item',style:{background:'rgba(16,185,129,0.1)'}},
+                                        h('span',{style:{color:'#86efac'}},'$'+b.price.toFixed(2)),
+                                        h('span',null,b.qty.toFixed(4))
+                                    ))
+                                ),
+                                h('div',null,
+                                    h('h4',{style:{color:'#fca5a5',marginBottom:'0.5rem'}},'Asks'),
+                                    orderBook.asks.map((a,i)=>h('div',{key:i,className:'order-item',style:{background:'rgba(239,68,68,0.1)'}},
+                                        h('span',{style:{color:'#fca5a5'}},'$'+a.price.toFixed(2)),
+                                        h('span',null,a.qty.toFixed(4))
+                                    ))
+                                )
+                            )
+                        ),
+                        portfolio.length>0&&h('div',{className:'card'},
+                            h('h3',null,'💼 Portfolio'),
+                            portfolio.map(p=>{
+                                const cur=data?.symbol===p.symbol?data.price:p.entry;
+                                const pnl=p.direction==='BUY'?(cur-p.entry)*p.size:(p.entry-cur)*p.size;
+                                return h('div',{key:p.id,className:'position-item '+(pnl>=0?'bullish':'bearish')},
+                                    h('div',{className:'flex-between'},
+                                        h('div',null,
+                                            h('div',{className:'font-bold'},p.symbol+' - '+p.direction),
+                                            h('div',{className:'text-xs'},'Entry: $'+p.entry+' | Size: '+p.size),
+                                            h('div',{className:'font-bold text-sm'},'P/L: $'+pnl.toFixed(2))
+                                        ),
+                                        h('button',{className:'btn btn-danger',onClick:()=>closePos(p.id)},'Close')
+                                    )
+                                );
                             })
-                        });
-                        
-                        const data = await res.json();
-                        results[tf] = data;
-                    } catch (err) {
-                        console.error(`Failed to fetch ${tf}:`, err);
-                    }
-                }
-                
-                setMultiTFData(results);
-                setLoading(false);
-                speak('Multi-timeframe analysis complete');
-            };
-
-            const runBacktest = async (strategy, days = 30) => {
-                speak('Running backtest');
-                
-                // Simulate backtesting
-                const results = {
-                    totalTrades: 45,
-                    winRate: 62.2,
-                    profitFactor: 1.85,
-                    totalReturn: 15.7,
-                    maxDrawdown: -8.3,
-                    avgWin: 2.1,
-                    avgLoss: -1.3,
-                    sharpeRatio: 1.42
-                };
-                
-                setTimeout(() => {
-                    alert(`📊 Backtest Results (${days} days)\n\n` +
-                          `Win Rate: ${results.winRate}%\n` +
-                          `Total Return: ${results.totalReturn}%\n` +
-                          `Profit Factor: ${results.profitFactor}\n` +
-                          `Max Drawdown: ${results.maxDrawdown}%\n` +
-                          `Sharpe Ratio: ${results.sharpeRatio}`);
-                    speak(`Backtest complete. Win rate ${results.winRate} percent`);
-                }, 2000);
-            };
-
-            const addToPortfolio = () => {
-                if (!analysis) {
-                    alert('Analyze market first');
-                    return;
-                }
-                
-                const position = {
-                    id: Date.now(),
-                    symbol: symbol,
-                    entry: parseFloat(analysis.entryPoint),
-                    size: tradeSize,
-                    stopLoss: parseFloat(analysis.stopLoss),
-                    takeProfit: parseFloat(analysis.takeProfit),
-                    direction: analysis.recommendation,
-                    openedAt: new Date().toISOString()
-                };
-                
-                const updated = [...portfolio, position];
-                setPortfolio(updated);
-                localStorage.setItem('portfolio', JSON.stringify(updated));
-                speak(`Added ${symbol} to portfolio`);
-            };
-
-            const closePosition = (positionId) => {
-                const position = portfolio.find(p => p.id === positionId);
-                if (!position) return;
-                
-                const currentPrice = marketData?.price || position.entry;
-                const pnl = position.direction === 'BUY' 
-                    ? (currentPrice - position.entry) * position.size 
-                    : (position.entry - currentPrice) * position.size;
-                
-                const trade = {
-                    ...position,
-                    exit: currentPrice,
-                    pnl: pnl,
-                    closedAt: new Date().toISOString()
-                };
-                
-                const updatedTrades = [...trades, trade];
-                setTrades(updatedTrades);
-                localStorage.setItem('trades', JSON.stringify(updatedTrades));
-                
-                const updatedPortfolio = portfolio.filter(p => p.id !== positionId);
-                setPortfolio(updatedPortfolio);
-                localStorage.setItem('portfolio', JSON.stringify(updatedPortfolio));
-                
-                speak(`Position closed. ${pnl > 0 ? 'Profit' : 'Loss'} of ${Math.abs(pnl).toFixed(2)}`);
-            };
-                if (!broker) {
-                    alert('Connect to broker first');
-                    return;
-                }
-                if (!analysis) {
-                    alert('Analyze market first');
-                    return;
-                }
-                
-                speak(`Executing ${analysis.recommendation} order for ${tradeSize} lots`);
-                alert(`✅ Trade Executed!\n\n${analysis.recommendation} ${tradeSize} lots ${symbol}\nEntry: $${analysis.entryPoint}\nSL: $${analysis.stopLoss}\nTP: $${analysis.takeProfit}`);
-            };
-
-            return (
-                <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4">
-                    <div className="max-w-7xl mx-auto">
-                        <h1 className="text-3xl font-bold text-white text-center mb-4">
-                            🤖 Institutional AI Trading System
-                        </h1>
-                        <p className="text-blue-200 text-center mb-6">Real-time data • Voice control • Live execution</p>
-                        
-                        {/* Control Bar */}
-                        <div className="mb-6 bg-white/10 rounded-xl p-4 border border-white/20">
-                            <div className="flex gap-3 flex-wrap items-center justify-between">
-                                <div className="flex gap-3 flex-wrap">
-                                    <button
-                                        onClick={toggleVoice}
-                                        className={`px-6 py-3 rounded-lg font-semibold ${
-                                            isListening ? 'bg-red-600 animate-pulse' : 'bg-purple-600 hover:bg-purple-700'
-                                        } text-white`}
-                                    >
-                                        {isListening ? '🎤 Listening...' : '🎤 Voice Command'}
-                                    </button>
-                                    
-                                    <button 
-                                        onClick={() => setShowSettings(!showSettings)} 
-                                        className="px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg"
-                                    >
-                                        ⚙️ Settings
-                                    </button>
-                                    
-                                    <button 
-                                        onClick={() => setAlertsOn(!alertsOn)} 
-                                        className={`px-4 py-3 rounded-lg ${alertsOn ? 'bg-green-600' : 'bg-gray-600'} text-white`}
-                                    >
-                                        🔔 Alerts {alertsOn ? 'ON' : 'OFF'}
-                                    </button>
-                                    
-                                    <button 
-                                        onClick={() => setAutoRefresh(!autoRefresh)} 
-                                        className={`px-4 py-3 rounded-lg ${autoRefresh ? 'bg-green-600 animate-pulse' : 'bg-gray-600'} text-white`}
-                                    >
-                                        🔄 Auto {autoRefresh ? 'ON' : 'OFF'}
-                                    </button>
-                                    
-                                    <button 
-                                        onClick={() => setShowPortfolio(!showPortfolio)} 
-                                        className="px-4 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg text-white"
-                                    >
-                                        💼 Portfolio ({portfolio.length})
-                                    </button>
-                                    
-                                    <button 
-                                        onClick={() => setShowBacktest(!showBacktest)} 
-                                        className="px-4 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg text-white"
-                                    >
-                                        📊 Backtest
-                                    </button>
-                                    
-                                    <button 
-                                        onClick={fetchMultiTimeframe} 
-                                        className="px-4 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white"
-                                    >
-                                        📈 Multi-TF
-                                    </button>
-                                    
-                                    <button 
-                                        onClick={() => {
-                                            setShowMarketMovers(!showMarketMovers);
-                                            if (!showMarketMovers) fetchMarketMovers();
-                                        }} 
-                                        className="px-4 py-3 bg-green-600 hover:bg-green-700 rounded-lg text-white"
-                                    >
-                                        🔥 Movers
-                                    </button>
-                                    
-                                    <button 
-                                        onClick={() => {
-                                            setShowOrderBook(!showOrderBook);
-                                            if (!showOrderBook) fetchOrderBook(symbol);
-                                        }} 
-                                        className="px-4 py-3 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-white"
-                                    >
-                                        📊 Depth
-                                    </button>
-                                </div>
-                                
-                                {voiceText && (
-                                    <div className="text-white bg-white/10 px-4 py-2 rounded-lg text-sm">
-                                        You said: "{voiceText}"
-                                    </div>
-                                )}
-                            </div>
-                            
-                            {showSettings && (
-                                <div className="mt-4 p-4 bg-white/5 rounded-lg border border-white/10">
-                                    <h4 className="text-white font-semibold mb-3">⚙️ Settings</h4>
-                                    
-                                    <div className="space-y-3">
-                                        <div>
-                                            <label className="block text-sm text-blue-200 mb-2">Auto-Refresh Interval (seconds)</label>
-                                            <input
-                                                type="number"
-                                                value={refreshInterval}
-                                                onChange={(e) => setRefreshInterval(parseInt(e.target.value))}
-                                                min="5"
-                                                max="300"
-                                                className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded text-white text-sm"
-                                            />
-                                        </div>
-                                        
-                                        <div>
-                                            <label className="block text-sm text-blue-200 mb-2">
-                                                🟢 ExchangeRate-API (FREE - No key needed!)
-                                            </label>
-                                            <p className="text-xs text-green-300">✓ Works globally for forex rates</p>
-                                        </div>
-                                        
-                                        <div>
-                                            <label className="block text-sm text-blue-200 mb-2">
-                                                Twelve Data (Optional - Full analysis)
-                                                <a href="https://twelvedata.com/pricing" target="_blank" className="text-blue-400 ml-2 underline text-xs">Get Free Key</a>
-                                            </label>
-                                            <input
-                                                type="password"
-                                                value={apiKeys.twelvedata}
-                                                onChange={(e) => {
-                                                    const newKeys = {...apiKeys, twelvedata: e.target.value};
-                                                    setApiKeys(newKeys);
-                                                    localStorage.setItem('twelvedata_key', e.target.value);
-                                                }}
-                                                placeholder="Optional - for advanced forex data"
-                                                className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded text-white text-sm"
-                                            />
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="mt-4 p-3 bg-green-600/20 border border-green-400 rounded">
-                                        <p className="text-xs text-green-200">
-                                            ✅ <strong>Crypto:</strong> Works without keys (Binance)<br/>
-                                            ✅ <strong>Forex:</strong> Works without keys (ExchangeRate-API)<br/>
-                                            ✅ <strong>Stocks:</strong> Works without keys (Yahoo Finance)
-                                        </p>
-                                    </div>
-                                </div>
-                            )}
-                            
-                            {/* Portfolio Modal */}
-                            {showPortfolio && (
-                                <div className="mt-4 p-4 bg-white/5 rounded-lg border border-white/10">
-                                    <h4 className="text-white font-semibold mb-3">💼 Active Positions</h4>
-                                    {portfolio.length === 0 ? (
-                                        <p className="text-blue-200 text-sm">No active positions</p>
-                                    ) : (
-                                        <div className="space-y-2">
-                                            {portfolio.map(pos => {
-                                                const currentPrice = marketData?.symbol === pos.symbol ? marketData.price : pos.entry;
-                                                const pnl = pos.direction === 'BUY' 
-                                                    ? (currentPrice - pos.entry) * pos.size 
-                                                    : (pos.entry - currentPrice) * pos.size;
-                                                
-                                                return (
-                                                    <div key={pos.id} className={`p-3 rounded border ${pnl >= 0 ? 'bg-green-600/20 border-green-400' : 'bg-red-600/20 border-red-400'}`}>
-                                                        <div className="flex justify-between items-center">
-                                                            <div>
-                                                                <div className="text-white font-semibold">{pos.symbol} - {pos.direction}</div>
-                                                                <div className="text-xs text-blue-200">
-                                                                    Entry: ${pos.entry} | Size: {pos.size} lots
-                                                                </div>
-                                                                <div className={`text-sm font-bold ${pnl >= 0 ? 'text-green-300' : 'text-red-300'}`}>
-                                                                    P/L: ${pnl.toFixed(2)} ({((pnl/pos.entry)*100).toFixed(2)}%)
-                                                                </div>
-                                                            </div>
-                                                            <button
-                                                                onClick={() => closePosition(pos.id)}
-                                                                className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm"
-                                                            >
-                                                                Close
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
-                                    
-                                    {trades.length > 0 && (
-                                        <div className="mt-4">
-                                            <h5 className="text-white font-semibold mb-2">📊 Trade History</h5>
-                                            <div className="text-sm text-blue-200">
-                                                Total Trades: {trades.length} | 
-                                                Win Rate: {((trades.filter(t => t.pnl > 0).length / trades.length) * 100).toFixed(1)}% |
-                                                Total P/L: ${trades.reduce((sum, t) => sum + t.pnl, 0).toFixed(2)}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                            
-                            {/* Backtest Modal */}
-                            {showBacktest && (
-                                <div className="mt-4 p-4 bg-white/5 rounded-lg border border-white/10">
-                                    <h4 className="text-white font-semibold mb-3">📊 Backtesting</h4>
-                                    <div className="space-y-3">
-                                        <button
-                                            onClick={() => runBacktest('RSI_EMA', 30)}
-                                            className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white rounded"
-                                        >
-                                            Run RSI + EMA Strategy (30 days)
-                                        </button>
-                                        <button
-                                            onClick={() => runBacktest('MACD_BB', 60)}
-                                            className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white rounded"
-                                        >
-                                            Run MACD + Bollinger Strategy (60 days)
-                                        </button>
-                                        <button
-                                            onClick={() => runBacktest('MOMENTUM', 90)}
-                                            className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white rounded"
-                                        >
-                                            Run Momentum Strategy (90 days)
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            {/* Left Panel */}
-                            <div className="space-y-6">
-                                {/* Market Input */}
-                                <div className="bg-white/10 rounded-xl p-6 border border-white/20">
-                                    <h3 className="text-lg font-semibold text-white mb-4">📊 Market Selection</h3>
-                                    <div className="space-y-3">
-                                        <div>
-                                            <label className="block text-sm text-blue-200 mb-2">Symbol</label>
-                                            <input
-                                                type="text"
-                                                value={symbol}
-                                                onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-                                                className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded text-white"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm text-blue-200 mb-2">Timeframe</label>
-                                            <select
-                                                value={timeframe}
-                                                onChange={(e) => setTimeframe(e.target.value)}
-                                                className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded text-white"
-                                            >
-                                                <option value="1M">1 Min</option>
-                                                <option value="5M">5 Min</option>
-                                                <option value="15M">15 Min</option>
-                                                <option value="1H">1 Hour</option>
-                                                <option value="4H">4 Hours</option>
-                                                <option value="1D">1 Day</option>
-                                            </select>
-                                        </div>
-                                        <button
-                                            onClick={() => fetchData(symbol)}
-                                            disabled={loading}
-                                            className="w-full py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 disabled:from-gray-600 disabled:to-gray-700 text-white rounded-lg font-semibold"
-                                        >
-                                            {loading ? '⏳ Loading...' : '🔍 Analyze Market'}
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Broker */}
-                                <div className="bg-white/10 rounded-xl p-6 border border-white/20">
-                                    <h3 className="text-lg font-semibold text-white mb-4">💰 Broker</h3>
-                                    <div className="space-y-3">
-                                        <select
-                                            value={selectedBroker}
-                                            onChange={(e) => setSelectedBroker(e.target.value)}
-                                            className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded text-white"
-                                        >
-                                            <option value="demo">Demo Account</option>
-                                            <option value="mt4">MetaTrader 4</option>
-                                            <option value="mt5">MetaTrader 5</option>
-                                            <option value="ib">Interactive Brokers</option>
-                                            <option value="alpaca">Alpaca</option>
-                                            <option value="binance">Binance</option>
-                                        </select>
-                                        
-                                        {!broker ? (
-                                            <button
-                                                onClick={connectBroker}
-                                                className="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold"
-                                            >
-                                                🔌 Connect
-                                            </button>
-                                        ) : (
-                                            <div className="bg-green-600/20 border border-green-400 rounded p-3">
-                                                <div className="text-green-300 font-semibold mb-2">✅ {broker.name}</div>
-                                                <div className="text-sm text-white space-y-1">
-                                                    <div>Balance: ${broker.balance.toLocaleString()}</div>
-                                                    <div>Equity: ${broker.equity.toLocaleString()}</div>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Trade Execution */}
-                                <div className="bg-white/10 rounded-xl p-6 border border-white/20">
-                                    <h3 className="text-lg font-semibold text-white mb-4">🎯 Execute</h3>
-                                    <div className="space-y-3">
-                                        <div>
-                                            <label className="block text-sm text-blue-200 mb-2">Size (Lots)</label>
-                                            <input
-                                                type="number"
-                                                value={tradeSize}
-                                                onChange={(e) => setTradeSize(parseFloat(e.target.value))}
-                                                step="0.01"
-                                                min="0.01"
-                                                className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded text-white"
-                                            />
-                                        </div>
-                                        <button
-                                            onClick={executeTrade}
-                                            disabled={!broker || !analysis}
-                                            className="w-full py-3 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 disabled:from-gray-600 disabled:to-gray-700 text-white rounded-lg font-semibold"
-                                        >
-                                            ⚡ Execute Trade
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Right Panel - Results */}
-                            <div className="lg:col-span-2 space-y-6">
-                                {/* Market Data */}
-                                {marketData && (
-                                    <div className="bg-white/10 rounded-xl p-6 border border-white/20">
-                                        <div className="flex justify-between items-center mb-4">
-                                            <h3 className="text-xl font-semibold text-white">{marketData.symbol}</h3>
-                                            <span className="text-xs bg-blue-600/30 px-3 py-1 rounded text-blue-200">{marketData.source}</span>
-                                        </div>
-                                        
-                                        {marketData.note && (
-                                            <div className="mb-4 p-3 bg-yellow-600/20 border border-yellow-400 rounded text-yellow-200 text-sm">
-                                                ⚠️ {marketData.note}
-                                            </div>
-                                        )}
-                                        
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                                            <div className="bg-white/5 p-3 rounded">
-                                                <div className="text-blue-200 text-sm">Price</div>
-                                                <div className="text-white text-xl font-bold">${marketData.price?.toLocaleString()}</div>
-                                            </div>
-                                            <div className="bg-white/5 p-3 rounded">
-                                                <div className="text-blue-200 text-sm">Change</div>
-                                                <div className={`text-xl font-bold ${marketData.changePercent > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                                    {marketData.changePercent > 0 ? '+' : ''}{marketData.changePercent}%
-                                                </div>
-                                            </div>
-                                            <div className="bg-white/5 p-3 rounded">
-                                                <div className="text-blue-200 text-sm">24h High</div>
-                                                <div className="text-white text-xl font-bold">${marketData.high24h?.toLocaleString()}</div>
-                                            </div>
-                                            <div className="bg-white/5 p-3 rounded">
-                                                <div className="text-blue-200 text-sm">24h Low</div>
-                                                <div className="text-white text-xl font-bold">${marketData.low24h?.toLocaleString()}</div>
-                                            </div>
-                                        </div>
-
-                                        {marketData.indicators && (
-                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                                <div className="bg-blue-600/20 p-3 rounded border border-blue-400">
-                                                    <div className="text-blue-200 text-sm">RSI</div>
-                                                    <div className="text-white font-bold text-lg">{marketData.indicators.rsi?.toFixed(1)}</div>
-                                                </div>
-                                                <div className="bg-purple-600/20 p-3 rounded border border-purple-400">
-                                                    <div className="text-purple-200 text-sm">MACD</div>
-                                                    <div className="text-white font-bold text-lg">{marketData.indicators.macd?.histogram?.toFixed(2)}</div>
-                                                </div>
-                                                <div className="bg-green-600/20 p-3 rounded border border-green-400">
-                                                    <div className="text-green-200 text-sm">ADX</div>
-                                                    <div className="text-white font-bold text-lg">{marketData.indicators.adx?.toFixed(1)}</div>
-                                                </div>
-                                                <div className="bg-orange-600/20 p-3 rounded border border-orange-400">
-                                                    <div className="text-orange-200 text-sm">ATR</div>
-                                                    <div className="text-white font-bold text-lg">${marketData.indicators.atr?.toFixed(2)}</div>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* Analysis */}
-                                {analysis && (
-                                    <div className="bg-white/10 rounded-xl p-6 border border-white/20">
-                                        <h3 className="text-xl font-semibold text-white mb-4">🤖 AI Analysis</h3>
-                                        
-                                        <div className={`p-4 rounded-lg mb-4 ${
-                                            analysis.direction === 'BULLISH' ? 'bg-green-600/30 border-2 border-green-400' :
-                                            analysis.direction === 'BEARISH' ? 'bg-red-600/30 border-2 border-red-400' :
-                                            'bg-yellow-600/30 border-2 border-yellow-400'
-                                        }`}>
-                                            <div className="flex justify-between items-center mb-2">
-                                                <span className="text-2xl font-bold text-white">{analysis.direction}</span>
-                                                <span className="text-lg font-semibold text-white">{analysis.confidence}% Confidence</span>
-                                            </div>
-                                            <div className="w-full bg-white/20 rounded-full h-2">
-                                                <div className="bg-white h-2 rounded-full" style={{width: `${analysis.confidence}%`}}></div>
-                                            </div>
-                                        </div>
-
-                                        <div className={`p-4 rounded-lg border-2 mb-4 ${
-                                            analysis.recommendation === 'BUY' ? 'bg-green-500/20 border-green-400' :
-                                            analysis.recommendation === 'SELL' ? 'bg-red-500/20 border-red-400' :
-                                            'bg-blue-500/20 border-blue-400'
-                                        }`}>
-                                            <div className="font-bold text-white text-lg mb-2">
-                                                📢 {analysis.recommendation}
-                                            </div>
-                                            <p className="text-sm text-blue-100">{analysis.reasoning}</p>
-                                        </div>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                            <div className="bg-white/5 p-4 rounded">
-                                                <h4 className="font-semibold text-white mb-3">Trade Setup</h4>
-                                                <div className="space-y-2 text-sm">
-                                                    <div className="flex justify-between">
-                                                        <span className="text-blue-200">Entry:</span>
-                                                        <span className="text-white font-bold">${analysis.entryPoint}</span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-blue-200">Stop Loss:</span>
-                                                        <span className="text-red-300 font-bold">${analysis.stopLoss}</span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-blue-200">Take Profit:</span>
-                                                        <span className="text-green-300 font-bold">${analysis.takeProfit}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="bg-white/5 p-4 rounded">
-                                                <h4 className="font-semibold text-white mb-3">Patterns</h4>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {analysis.patterns.map((p, i) => (
-                                                        <span key={i} className="text-xs px-3 py-1 bg-blue-600/40 border border-blue-400 rounded-full text-white">
-                                                            {p}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="bg-green-600/20 p-3 rounded border border-green-400">
-                                                <div className="font-semibold text-white mb-2">Support</div>
-                                                {analysis.keyLevels.support.map((s, i) => (
-                                                    <div key={i} className="text-green-200 text-sm">${s}</div>
-                                                ))}
-                                            </div>
-                                            <div className="bg-red-600/20 p-3 rounded border border-red-400">
-                                                <div className="font-semibold text-white mb-2">Resistance</div>
-                                                {analysis.keyLevels.resistance.map((r, i) => (
-                                                    <div key={i} className="text-red-200 text-sm">${r}</div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                                
-                                {/* Multi-Timeframe Analysis */}
-                                {multiTFData && (
-                                    <div className="bg-white/10 rounded-xl p-6 border border-white/20">
-                                        <h3 className="text-xl font-semibold text-white mb-4">📈 Multi-Timeframe Analysis</h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                            {Object.entries(multiTFData).map(([tf, data]) => {
-                                                if (!data || !data.indicators) return null;
-                                                const rsi = data.indicators.rsi;
-                                                const trend = rsi > 70 ? 'Overbought' : rsi < 30 ? 'Oversold' : 'Neutral';
-                                                
-                                                return (
-                                                    <div key={tf} className={`p-4 rounded border-2 ${
-                                                        trend === 'Overbought' ? 'bg-red-600/20 border-red-400' :
-                                                        trend === 'Oversold' ? 'bg-green-600/20 border-green-400' :
-                                                        'bg-blue-600/20 border-blue-400'
-                                                    }`}>
-                                                        <h4 className="font-bold text-white mb-2">{tf}</h4>
-                                                        <div className="text-sm space-y-1">
-                                                            <div className="text-blue-200">RSI: <span className="text-white font-semibold">{rsi.toFixed(1)}</span></div>
-                                                            <div className="text-blue-200">Price: <span className="text-white font-semibold">${data.price.toLocaleString()}</span></div>
-                                                            <div className={`font-semibold ${
-                                                                trend === 'Overbought' ? 'text-red-300' :
-                                                                trend === 'Oversold' ? 'text-green-300' :
-                                                                'text-blue-300'
-                                                            }`}>{trend}</div>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                        <div className="mt-4 p-3 bg-blue-600/20 border border-blue-400 rounded">
-                                            <p className="text-blue-100 text-sm">
-                                                <strong>💡 Confluence:</strong> {
-                                                    Object.values(multiTFData).filter(d => d?.indicators?.rsi > 70).length >= 2 ? '⚠️ Multiple timeframes overbought - Consider selling' :
-                                                    Object.values(multiTFData).filter(d => d?.indicators?.rsi < 30).length >= 2 ? '✅ Multiple timeframes oversold - Consider buying' :
-                                                    '➡️ Mixed signals across timeframes'
-                                                }
-                                            </p>
-                                        </div>
-                                    </div>
-                                )}
-                                
-                                {/* Active Alerts */}
-                                {alerts.length > 0 && (
-                                    <div className="bg-orange-600/20 rounded-xl p-4 border-2 border-orange-400">
-                                        <h3 className="text-white font-semibold mb-3 flex items-center justify-between">
-                                            <span>🔔 Recent Alerts</span>
-                                            <button onClick={() => setAlerts([])} className="text-xs text-orange-200 hover:text-white">
-                                                Clear All
-                                            </button>
-                                        </h3>
-                                        <div className="space-y-2 max-h-48 overflow-y-auto">
-                                            {alerts.slice(0, 5).map(alert => (
-                                                <div key={alert.id} className={`p-2 rounded border text-sm ${
-                                                    alert.severity === 'high' ? 'bg-red-600/30 border-red-400' : 'bg-yellow-600/30 border-yellow-400'
-                                                }`}>
-                                                    <div className="flex justify-between items-center">
-                                                        <div>
-                                                            <span className={`px-2 py-1 rounded text-xs font-bold ${
-                                                                alert.severity === 'high' ? 'bg-red-500' : 'bg-yellow-500'
-                                                            } text-white mr-2`}>
-                                                                {alert.type}
-                                                            </span>
-                                                            <span className="text-white text-xs">{alert.timestamp}</span>
-                                                        </div>
-                                                    </div>
-                                                    <p className="text-white text-sm mt-1">{alert.message}</p>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                                
-                                {/* Market Movers */}
-                                {showMarketMovers && marketMovers && (
-                                    <div className="bg-white/10 rounded-xl p-6 border border-white/20">
-                                        <h3 className="text-xl font-semibold text-white mb-4">🔥 Market Movers</h3>
-                                        
-                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
-                                            <div className="bg-white/5 p-3 rounded text-center">
-                                                <div className="text-blue-200 text-sm">Total Pairs</div>
-                                                <div className="text-white text-xl font-bold">{marketMovers.marketStats.totalPairs}</div>
-                                            </div>
-                                            <div className="bg-green-600/20 p-3 rounded text-center border border-green-400">
-                                                <div className="text-green-200 text-sm">Bullish</div>
-                                                <div className="text-white text-xl font-bold">{marketMovers.marketStats.bullishCount}</div>
-                                            </div>
-                                            <div className="bg-red-600/20 p-3 rounded text-center border border-red-400">
-                                                <div className="text-red-200 text-sm">Bearish</div>
-                                                <div className="text-white text-xl font-bold">{marketMovers.marketStats.bearishCount}</div>
-                                            </div>
-                                            <div className="bg-blue-600/20 p-3 rounded text-center border border-blue-400">
-                                                <div className="text-blue-200 text-sm">Sentiment</div>
-                                                <div className="text-white text-lg font-bold">{marketMovers.marketStats.marketSentiment}</div>
-                                            </div>
-                                        </div>
-                                        
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div>
-                                                <h4 className="font-semibold text-green-300 mb-2">📈 Top Gainers</h4>
-                                                <div className="space-y-2 max-h-96 overflow-y-auto">
-                                                    {marketMovers.gainers.slice(0, 10).map((coin, i) => (
-                                                        <div key={i} className="bg-green-600/20 border border-green-400 p-3 rounded flex justify-between items-center">
-                                                            <div>
-                                                                <div className="text-white font-bold">{coin.symbol}</div>
-                                                                <div className="text-green-200 text-sm">${coin.price.toLocaleString()}</div>
-                                                            </div>
-                                                            <div className="text-right">
-                                                                <div className="text-green-300 font-bold text-lg">+{coin.changePercent.toFixed(2)}%</div>
-                                                                <div className="text-green-200 text-xs">Vol: ${(coin.volumeUSD / 1000000).toFixed(1)}M</div>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                            
-                                            <div>
-                                                <h4 className="font-semibold text-red-300 mb-2">📉 Top Losers</h4>
-                                                <div className="space-y-2 max-h-96 overflow-y-auto">
-                                                    {marketMovers.losers.slice(0, 10).map((coin, i) => (
-                                                        <div key={i} className="bg-red-600/20 border border-red-400 p-3 rounded flex justify-between items-center">
-                                                            <div>
-                                                                <div className="text-white font-bold">{coin.symbol}</div>
-                                                                <div className="text-red-200 text-sm">${coin.price.toLocaleString()}</div>
-                                                            </div>
-                                                            <div className="text-right">
-                                                                <div className="text-red-300 font-bold text-lg">{coin.changePercent.toFixed(2)}%</div>
-                                                                <div className="text-red-200 text-xs">Vol: ${(coin.volumeUSD / 1000000).toFixed(1)}M</div>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                                
-                                {/* Order Book / Depth */}
-                                {showOrderBook && orderBook && (
-                                    <div className="bg-white/10 rounded-xl p-6 border border-white/20">
-                                        <h3 className="text-xl font-semibold text-white mb-4">📊 Order Book - {orderBook.symbol}</h3>
-                                        
-                                        <div className="grid grid-cols-2 gap-4 mb-4">
-                                            <div className="bg-green-600/20 border border-green-400 rounded p-3 text-center">
-                                                <div className="text-green-200 text-sm">Buy Pressure</div>
-                                                <div className="text-green-300 text-2xl font-bold">{orderBook.buyPressure}%</div>
-                                            </div>
-                                            <div className="bg-red-600/20 border border-red-400 rounded p-3 text-center">
-                                                <div className="text-red-200 text-sm">Sell Pressure</div>
-                                                <div className="text-red-300 text-2xl font-bold">{orderBook.sellPressure}%</div>
-                                            </div>
-                                        </div>
-                                        
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div>
-                                                <h4 className="font-semibold text-green-300 mb-2">Bids (Buy Orders)</h4>
-                                                <div className="space-y-1">
-                                                    {orderBook.bids.map((bid, i) => (
-                                                        <div key={i} className="bg-green-600/10 p-2 rounded flex justify-between text-sm">
-                                                            <span className="text-green-300 font-mono">${bid.price.toFixed(2)}</span>
-                                                            <span className="text-white">{bid.quantity.toFixed(4)}</span>
-                                                            <span className="text-green-200">${bid.total.toFixed(0)}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                            
-                                            <div>
-                                                <h4 className="font-semibold text-red-300 mb-2">Asks (Sell Orders)</h4>
-                                                <div className="space-y-1">
-                                                    {orderBook.asks.map((ask, i) => (
-                                                        <div key={i} className="bg-red-600/10 p-2 rounded flex justify-between text-sm">
-                                                            <span className="text-red-300 font-mono">${ask.price.toFixed(2)}</span>
-                                                            <span className="text-white">{ask.quantity.toFixed(4)}</span>
-                                                            <span className="text-red-200">${ask.total.toFixed(0)}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        
-                                        <div className="mt-4 p-3 bg-blue-600/20 border border-blue-400 rounded">
-                                            <div className="text-blue-100 text-sm">
-                                                💡 <strong>Spread:</strong> ${orderBook.spread} | 
-                                                <strong className="ml-2">Interpretation:</strong> {
-                                                    orderBook.buyPressure > 60 ? 'Strong buying pressure - potential upward move' :
-                                                    orderBook.sellPressure > 60 ? 'Strong selling pressure - potential downward move' :
-                                                    'Balanced market - watch for breakout'
-                                                }
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="mt-6 bg-yellow-600/20 border border-yellow-400 rounded-lg p-4 text-center">
-                            <p className="text-yellow-100 text-sm">
-                                <strong>⚠️ Disclaimer:</strong> Educational purposes only. Trade at your own risk.
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                        )
+                    )
+                ),
+                h('div',{className:'alert',style:{textAlign:'center',borderColor:'#eab308',background:'rgba(234,179,8,0.2)',color:'#fef3c7'}},'⚠️ Educational only. Trade at your own risk.')
             );
-        };
-
-        ReactDOM.render(<App />, document.getElementById('root'));
+        }
+        
+        ReactDOM.render(React.createElement(App),document.getElementById('root'));
+    })();
     </script>
 </body>
 </html>
