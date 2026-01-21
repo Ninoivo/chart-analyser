@@ -11,13 +11,15 @@
         body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 50%,#0f172a 100%);min-height:100vh;color:#fff}
         .container{max-width:1600px;margin:0 auto;padding:1rem}
         .btn{padding:0.75rem 1.5rem;border-radius:0.5rem;border:none;font-weight:600;cursor:pointer;transition:all 0.2s;font-size:0.875rem}
+        .btn:hover{opacity:0.9;transform:translateY(-1px)}
+        .btn:active{transform:translateY(0)}
         .btn:disabled{opacity:0.5;cursor:not-allowed}
         .btn-primary{background:linear-gradient(135deg,#3b82f6,#06b6d4);color:#fff}
         .btn-success{background:linear-gradient(135deg,#10b981,#059669);color:#fff}
         .btn-danger{background:linear-gradient(135deg,#f97316,#dc2626);color:#fff}
         .btn-purple{background:#9333ea;color:#fff}
         .btn-gray{background:#4b5563;color:#fff}
-        .btn-yellow{background:#eab308;color:#fff}
+        .btn-yellow{background:#eab308;color:#000}
         .btn-green{background:#16a34a;color:#fff}
         .btn-indigo{background:#6366f1;color:#fff}
         .card{background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);border-radius:1rem;padding:1.5rem;border:1px solid rgba(255,255,255,0.2);margin-bottom:1.5rem}
@@ -50,11 +52,9 @@
         .badge{display:inline-block;padding:0.25rem 0.75rem;border-radius:9999px;font-size:0.75rem;font-weight:600}
         .overflow-auto{overflow-y:auto;max-height:400px}
         h1{font-size:2rem;text-align:center;margin-bottom:0.5rem}
-        h2{font-size:1.5rem;margin-bottom:1rem}
         h3{font-size:1.25rem;margin-bottom:0.75rem}
         .alert{padding:0.75rem;border-radius:0.5rem;margin-bottom:1rem;border:2px solid}
         .position-item{padding:0.75rem;border-radius:0.5rem;border:2px solid;margin-bottom:0.5rem}
-        .space-y-2>*+*{margin-top:0.5rem}
         .mover-item{padding:0.75rem;border-radius:0.5rem;border:2px solid}
         .order-item{padding:0.5rem;border-radius:0.25rem;display:flex;justify-content:space-between;font-family:monospace;font-size:0.875rem}
     </style>
@@ -81,7 +81,13 @@
             const [orderBook,setOrderBook]=useState(null);
             const [showMovers,setShowMovers]=useState(false);
             const [showDepth,setShowDepth]=useState(false);
+            const [showSettings,setShowSettings]=useState(false);
+            const [showPortfolio,setShowPortfolio]=useState(false);
             const [autoRefresh,setAutoRefresh]=useState(false);
+            const [apiKeys,setApiKeys]=useState({
+                alphavantage:localStorage.getItem('alphavantage_key')||'',
+                twelvedata:localStorage.getItem('twelvedata_key')||''
+            });
             const recog=useRef(null);
             
             useEffect(()=>{
@@ -117,13 +123,17 @@
             };
             
             const toggleVoice=()=>{
-                if(!recog.current)return alert('Voice not supported');
+                if(!recog.current)return alert('Voice not supported. Use Chrome or Edge.');
                 if(listening){
                     recog.current.stop();
                 }else{
-                    recog.current.start();
-                    setListening(true);
-                    speak('Listening');
+                    try{
+                        recog.current.start();
+                        setListening(true);
+                        speak('Listening');
+                    }catch(e){
+                        alert('Microphone error: '+e.message);
+                    }
                 }
             };
             
@@ -163,13 +173,14 @@
                     const r=await fetch('/.netlify/functions/market-data',{
                         method:'POST',
                         headers:{'Content-Type':'application/json'},
-                        body:JSON.stringify({symbol:s,timeframe,apiKeys:{}})
+                        body:JSON.stringify({symbol:s,timeframe,apiKeys})
                     });
                     const d=await r.json();
                     setData(d);
                     analyze(d);
                     speak('Data loaded');
                 }catch(e){
+                    console.error(e);
                     const demo=getDemo(s);
                     setData(demo);
                     analyze(demo);
@@ -212,7 +223,7 @@
             };
             
             const addPos=()=>{
-                if(!analysis)return alert('Analyze first');
+                if(!analysis)return alert('Analyze market first');
                 const pos={
                     id:Date.now(),symbol,entry:parseFloat(analysis.entryPoint),
                     size,direction:analysis.recommendation
@@ -220,7 +231,7 @@
                 const u=[...portfolio,pos];
                 setPortfolio(u);
                 localStorage.setItem('portfolio',JSON.stringify(u));
-                speak('Added');
+                speak('Added to portfolio');
             };
             
             const closePos=id=>{
@@ -228,7 +239,9 @@
                 if(!p)return;
                 const cur=data?.price||p.entry;
                 const pnl=p.direction==='BUY'?(cur-p.entry)*p.size:(p.entry-cur)*p.size;
-                setPortfolio(portfolio.filter(p=>p.id!==id));
+                const u=portfolio.filter(p=>p.id!==id);
+                setPortfolio(u);
+                localStorage.setItem('portfolio',JSON.stringify(u));
                 speak('Closed. '+(pnl>0?'Profit':'Loss')+' '+Math.abs(pnl).toFixed(2));
             };
             
@@ -239,7 +252,8 @@
                     setMovers(d);
                     speak('Movers loaded');
                 }catch(e){
-                    speak('Failed');
+                    console.error(e);
+                    speak('Failed to load movers');
                 }
             };
             
@@ -256,7 +270,8 @@
                     setOrderBook({symbol:s,bids,asks,buyPressure:parseFloat(bp),sellPressure:(100-bp).toFixed(1)});
                     speak('Depth loaded. Buy pressure '+bp+' percent');
                 }catch(e){
-                    speak('Failed');
+                    console.error(e);
+                    speak('Failed to load depth');
                 }
             };
             
@@ -268,41 +283,57 @@
                     h('div',{className:'flex',style:{justifyContent:'space-between',flexWrap:'wrap'}},
                         h('div',{className:'flex'},
                             h('button',{className:'btn '+(listening?'btn-danger pulse':'btn-purple'),onClick:toggleVoice},listening?'🎤 Stop':'🎤 Voice'),
+                            h('button',{className:'btn btn-purple',onClick:()=>setShowSettings(!showSettings)},'⚙️ Settings'),
                             h('button',{className:'btn '+(autoRefresh?'btn-success pulse':'btn-gray'),onClick:()=>setAutoRefresh(!autoRefresh)},'🔄 '+(autoRefresh?'ON':'OFF')),
-                            h('button',{className:'btn btn-primary',onClick:()=>setShowMovers(!showMovers)},'🔥 Movers'),
-                            h('button',{className:'btn btn-yellow',onClick:()=>setShowDepth(!showDepth)},'📊 Depth'),
-                            h('button',{className:'btn btn-indigo',onClick:()=>alert('Portfolio: '+portfolio.length+' positions')},'💼 ('+portfolio.length+')')
+                            h('button',{className:'btn btn-green',onClick:()=>{setShowMovers(!showMovers);if(!showMovers)fetchMovers()}},'🔥 Movers'),
+                            h('button',{className:'btn btn-yellow',onClick:()=>{setShowDepth(!showDepth);if(!showDepth)fetchDepth(symbol)}},'📊 Depth'),
+                            h('button',{className:'btn btn-indigo',onClick:()=>setShowPortfolio(!showPortfolio)},'💼 ('+portfolio.length+')')
                         ),
                         voiceText&&h('div',{className:'badge',style:{background:'#3b82f6'}},'"'+voiceText+'"')
                     ),
                     listening&&h('div',{className:'mt-3',style:{background:'rgba(147,51,234,0.2)',border:'2px solid #9333ea',borderRadius:'0.5rem',padding:'0.75rem'}},
                         h('p',{className:'text-sm',style:{color:'#e9d5ff',marginBottom:'0.5rem'}},'💡 Say: "Bitcoin", "Show movers", "Order book", "Tesla"')
+                    ),
+                    showSettings&&h('div',{className:'mt-3',style:{background:'rgba(255,255,255,0.05)',padding:'1rem',borderRadius:'0.5rem'}},
+                        h('h3',{style:{fontSize:'1rem'}},'⚙️ API Keys'),
+                        h('label',{className:'text-sm',style:{display:'block',marginBottom:'0.5rem'}},'Twelve Data (Forex/Stocks)'),
+                        h('input',{
+                            type:'password',
+                            value:apiKeys.twelvedata,
+                            onChange:e=>{
+                                const nk={...apiKeys,twelvedata:e.target.value};
+                                setApiKeys(nk);
+                                localStorage.setItem('twelvedata_key',e.target.value);
+                            },
+                            placeholder:'Optional API key'
+                        }),
+                        h('p',{className:'text-xs',style:{color:'#86efac'}},'✅ Crypto & Forex work without keys!')
                     )
                 ),
                 
                 h('div',{className:'grid grid-3'},
                     h('div',{className:'card'},
                         h('h3',null,'📊 Market'),
-                        h('input',{type:'text',value:symbol,onChange:e=>setSymbol(e.target.value.toUpperCase())}),
+                        h('input',{type:'text',value:symbol,onChange:e=>setSymbol(e.target.value.toUpperCase()),placeholder:'Symbol (BTCUSD)'}),
                         h('select',{value:timeframe,onChange:e=>setTimeframe(e.target.value)},
                             ['1M','5M','15M','1H','4H','1D'].map(t=>h('option',{key:t,value:t},t))
                         ),
-                        h('button',{className:'btn btn-primary',style:{width:'100%'},onClick:()=>fetchData(symbol),disabled:loading},loading?'⏳':'🔍 Analyze'),
+                        h('button',{className:'btn btn-primary',style:{width:'100%'},onClick:()=>fetchData(symbol),disabled:loading},loading?'⏳ Loading':'🔍 Analyze'),
                         h('div',{className:'mt-4'},
                             h('h3',null,'💰 Broker'),
                             h('select',{value:selectedBroker,onChange:e=>setSelectedBroker(e.target.value)},
-                                ['demo','mt4','mt5','binance'].map(b=>h('option',{key:b,value:b},b.toUpperCase()))
+                                [{v:'demo',l:'Demo'},{v:'mt4',l:'MT4'},{v:'mt5',l:'MT5'},{v:'binance',l:'Binance'}].map(b=>h('option',{key:b.v,value:b.v},b.l))
                             ),
                             !broker?h('button',{className:'btn btn-success',style:{width:'100%'},onClick:connect},'🔌 Connect'):
                             h('div',{className:'alert bullish'},
-                                h('div',{className:'font-bold'},'✅ '+broker.name),
+                                h('div',{className:'font-bold'},'✅ '+broker.name.toUpperCase()),
                                 h('div',{className:'text-sm'},'Balance: $'+broker.balance.toLocaleString())
                             )
                         ),
                         h('div',{className:'mt-4'},
                             h('h3',null,'🎯 Execute'),
-                            h('input',{type:'number',value:size,onChange:e=>setSize(parseFloat(e.target.value)),step:0.01,min:0.01,placeholder:'Lots'}),
-                            h('button',{className:'btn btn-danger',style:{width:'100%'},onClick:addPos,disabled:!analysis},'⚡ Trade')
+                            h('input',{type:'number',value:size,onChange:e=>setSize(parseFloat(e.target.value)||1),step:0.01,min:0.01,placeholder:'Lots'}),
+                            h('button',{className:'btn btn-danger',style:{width:'100%'},onClick:addPos,disabled:!analysis},'⚡ Execute Trade')
                         )
                     ),
                     
@@ -314,13 +345,13 @@
                             ),
                             h('div',{className:'grid grid-4 mb-3'},
                                 [
-                                    ['Price','$'+(data.price?.toLocaleString()||'N/A')],
-                                    ['Change',(data.changePercent>0?'+':'')+data.changePercent+'%'],
-                                    ['High','$'+(data.high24h?.toLocaleString()||'N/A')],
-                                    ['Low','$'+(data.low24h?.toLocaleString()||'N/A')]
-                                ].map(([l,v],i)=>h('div',{key:i,className:'stat-box'},
+                                    ['Price','$'+(data.price?.toLocaleString()||'N/A'),'#fff'],
+                                    ['Change',(data.changePercent>0?'+':'')+data.changePercent+'%',data.changePercent>0?'#10b981':'#ef4444'],
+                                    ['High','$'+(data.high24h?.toLocaleString()||'N/A'),'#fff'],
+                                    ['Low','$'+(data.low24h?.toLocaleString()||'N/A'),'#fff']
+                                ].map(([l,v,c],i)=>h('div',{key:i,className:'stat-box'},
                                     h('div',{className:'text-sm',style:{opacity:0.7}},l),
-                                    h('div',{className:'font-bold',style:{fontSize:'1.25rem',color:l==='Change'&&data.changePercent>0?'#10b981':l==='Change'?'#ef4444':'#fff'}},v)
+                                    h('div',{className:'font-bold',style:{fontSize:'1.25rem',color:c}},v)
                                 ))
                             ),
                             data.indicators&&h('div',{className:'grid grid-4'},
@@ -336,7 +367,7 @@
                             )
                         ),
                         analysis&&h('div',{className:'card'},
-                            h('h3',null,'🤖 Analysis'),
+                            h('h3',null,'🤖 AI Analysis'),
                             h('div',{className:'p-3 mb-3 '+(analysis.direction==='BULLISH'?'bullish':analysis.direction==='BEARISH'?'bearish':'neutral'),style:{borderRadius:'0.5rem'}},
                                 h('div',{className:'flex-between'},
                                     h('span',{className:'font-bold',style:{fontSize:'1.5rem'}},analysis.direction),
@@ -352,9 +383,9 @@
                             h('h3',null,'🔥 Market Movers'),
                             h('div',{className:'grid grid-2'},
                                 h('div',null,
-                                    h('h4',{style:{color:'#86efac',marginBottom:'0.5rem'}},'📈 Gainers'),
+                                    h('h4',{style:{color:'#86efac',marginBottom:'0.5rem',fontSize:'1rem'}},'📈 Top Gainers'),
                                     h('div',{className:'overflow-auto'},
-                                        movers.gainers.slice(0,5).map((c,i)=>h('div',{key:i,className:'mover-item bullish mb-2'},
+                                        movers.gainers.slice(0,8).map((c,i)=>h('div',{key:i,className:'mover-item bullish mb-2'},
                                             h('div',{className:'flex-between'},
                                                 h('div',null,
                                                     h('div',{className:'font-bold text-sm'},c.symbol),
@@ -366,9 +397,9 @@
                                     )
                                 ),
                                 h('div',null,
-                                    h('h4',{style:{color:'#fca5a5',marginBottom:'0.5rem'}},'📉 Losers'),
+                                    h('h4',{style:{color:'#fca5a5',marginBottom:'0.5rem',fontSize:'1rem'}},'📉 Top Losers'),
                                     h('div',{className:'overflow-auto'},
-                                        movers.losers.slice(0,5).map((c,i)=>h('div',{key:i,className:'mover-item bearish mb-2'},
+                                        movers.losers.slice(0,8).map((c,i)=>h('div',{key:i,className:'mover-item bearish mb-2'},
                                             h('div',{className:'flex-between'},
                                                 h('div',null,
                                                     h('div',{className:'font-bold text-sm'},c.symbol),
@@ -384,34 +415,34 @@
                         showDepth&&orderBook&&h('div',{className:'card'},
                             h('h3',null,'📊 Order Book - '+orderBook.symbol),
                             h('div',{className:'grid grid-2 mb-3'},
-                                h('div',{className:'p-3 bullish',style:{textAlign:'center'}},
+                                h('div',{className:'p-3 bullish',style:{textAlign:'center',borderRadius:'0.5rem'}},
                                     h('div',{className:'text-sm'},'Buy Pressure'),
                                     h('div',{className:'font-bold',style:{fontSize:'2rem'}},orderBook.buyPressure+'%')
                                 ),
-                                h('div',{className:'p-3 bearish',style:{textAlign:'center'}},
+                                h('div',{className:'p-3 bearish',style:{textAlign:'center',borderRadius:'0.5rem'}},
                                     h('div',{className:'text-sm'},'Sell Pressure'),
                                     h('div',{className:'font-bold',style:{fontSize:'2rem'}},orderBook.sellPressure+'%')
                                 )
                             ),
                             h('div',{className:'grid grid-2'},
                                 h('div',null,
-                                    h('h4',{style:{color:'#86efac',marginBottom:'0.5rem'}},'Bids'),
-                                    orderBook.bids.map((b,i)=>h('div',{key:i,className:'order-item',style:{background:'rgba(16,185,129,0.1)'}},
+                                    h('h4',{style:{color:'#86efac',marginBottom:'0.5rem',fontSize:'1rem'}},'Bids'),
+                                    orderBook.bids.map((b,i)=>h('div',{key:i,className:'order-item',style:{background:'rgba(16,185,129,0.1)',marginBottom:'0.25rem'}},
                                         h('span',{style:{color:'#86efac'}},'$'+b.price.toFixed(2)),
                                         h('span',null,b.qty.toFixed(4))
                                     ))
                                 ),
                                 h('div',null,
-                                    h('h4',{style:{color:'#fca5a5',marginBottom:'0.5rem'}},'Asks'),
-                                    orderBook.asks.map((a,i)=>h('div',{key:i,className:'order-item',style:{background:'rgba(239,68,68,0.1)'}},
+                                    h('h4',{style:{color:'#fca5a5',marginBottom:'0.5rem',fontSize:'1rem'}},'Asks'),
+                                    orderBook.asks.map((a,i)=>h('div',{key:i,className:'order-item',style:{background:'rgba(239,68,68,0.1)',marginBottom:'0.25rem'}},
                                         h('span',{style:{color:'#fca5a5'}},'$'+a.price.toFixed(2)),
                                         h('span',null,a.qty.toFixed(4))
                                     ))
                                 )
                             )
                         ),
-                        portfolio.length>0&&h('div',{className:'card'},
-                            h('h3',null,'💼 Portfolio'),
+                        showPortfolio&&portfolio.length>0&&h('div',{className:'card'},
+                            h('h3',null,'💼 Active Portfolio'),
                             portfolio.map(p=>{
                                 const cur=data?.symbol===p.symbol?data.price:p.entry;
                                 const pnl=p.direction==='BUY'?(cur-p.entry)*p.size:(p.entry-cur)*p.size;
@@ -420,16 +451,16 @@
                                         h('div',null,
                                             h('div',{className:'font-bold'},p.symbol+' - '+p.direction),
                                             h('div',{className:'text-xs'},'Entry: $'+p.entry+' | Size: '+p.size),
-                                            h('div',{className:'font-bold text-sm'},'P/L: $'+pnl.toFixed(2))
+                                            h('div',{className:'font-bold text-sm'},'P/L: $'+pnl.toFixed(2)+' ('+(pnl/p.entry*100).toFixed(2)+'%)')
                                         ),
-                                        h('button',{className:'btn btn-danger',onClick:()=>closePos(p.id)},'Close')
+                                        h('button',{className:'btn btn-danger',style:{padding:'0.5rem 1rem'},onClick:()=>closePos(p.id)},'Close')
                                     )
                                 );
                             })
                         )
                     )
                 ),
-                h('div',{className:'alert',style:{textAlign:'center',borderColor:'#eab308',background:'rgba(234,179,8,0.2)',color:'#fef3c7'}},'⚠️ Educational only. Trade at your own risk.')
+                h('div',{className:'alert',style:{textAlign:'center',borderColor:'#eab308',background:'rgba(234,179,8,0.2)',color:'#fef3c7'}},'⚠️ Educational purposes only. Trade at your own risk.')
             );
         }
         
